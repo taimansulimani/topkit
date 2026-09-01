@@ -1,0 +1,13 @@
+Copy and paste
+History for copied text and images. Search and pin items, optional previews and auto-paste after selection. You can export it too.
+
+Present and annotate
+Draw shapes, freehand, text, stickers, redaction, badges, guides, grids and measurements on top of any app. Always on-screen, across monitors and macOS Spaces. Present with a magnifying glass and halo that follow your cursor. Pick a color from anywhere on screen and save it in the clipboard.
+
+Record annotated screenshots and videos
+Screenshot a window or region, annotate it, then copy to clipboard and/or save to a folder. Record a window or region as video. Optional live dictation subtitles burned into the video, and optional microphone audio. Trim and save your video, ready to share.
+
+Every tool has customizable global shortcuts.
+
+Privacy
+Topkit has no internet access by design. No login, no data collection, no telemetry, no ads. Everything stays local and secure.

@@ -1,0 +1,1 @@
+Initial release. Clipboard history, annotated screenshots, screen recording with optional live subtitles, color picker, screen guides, magnify, and halo — all from the menu bar.

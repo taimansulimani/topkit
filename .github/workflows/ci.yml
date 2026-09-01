@@ -1,0 +1,52 @@
+# Run on every push/PR to main — tests must stay green before merging changes.
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  swift-test:
+    name: SwiftPM (swift test)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Validate App Store metadata URLs
+        run: scripts/validate-app-store-metadata.sh
+
+      - name: Swift test
+        run: swift test
+
+  xcode-test:
+    name: Xcode (xcodebuild test)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Validate App Store metadata URLs
+        run: scripts/validate-app-store-metadata.sh
+
+      # Unsigned CI build: matches typical OSS macOS app workflows on GitHub-hosted runners.
+      - name: Xcode unit tests
+        run: |
+          xcodebuild \
+            -project Topkit.xcodeproj \
+            -scheme Topkit \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            test

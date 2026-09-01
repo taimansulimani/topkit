@@ -1,0 +1,1 @@
+clipboard,history,screenshot,screen recorder,markup,color picker,menu bar,screen capture,drawing

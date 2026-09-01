@@ -1,0 +1,384 @@
+default_platform(:mac)
+require "shellwords"
+
+platform :mac do
+  desc "Run local CI-equivalent test gates"
+  lane :ci do
+    sh("cd '#{repo_root}' && swift test")
+    # build-for-testing (NOT test): the unit-test target is hosted in the Topkit menu-bar
+    # app, so `xcodebuild … test` launches the app as the runner and hangs unreliably
+    # ("test runner hung before establishing connection"). Those hosted tests are a subset
+    # of `swift test` above, so this only compiles app + test bundle — no launch, no hang.
+    sh(
+      "cd '#{repo_root}' && xcodebuild -project Topkit.xcodeproj -scheme Topkit " \
+      "-destination 'platform=macOS' " \
+      "-derivedDataPath /tmp/TopkitXCTestDerivedData build-for-testing"
+    )
+  end
+
+  desc "One-shot: red-team diff, tests, commit+push (if dirty), App Store Connect upload"
+  lane :fire do |options|
+    red_team_automated
+
+    unless options[:message].to_s.strip.empty?
+      ENV["FIRE_COMMIT_MESSAGE"] = options[:message].to_s.strip
+    end
+
+    ci
+
+    if fire_working_tree_dirty?
+      commit_and_push_fire
+    else
+      UI.important("Working tree clean — skipping commit and push.")
+    end
+
+    upload_build
+  end
+
+  desc "Build a local Release .app (no App Sandbox) for sharing/testing"
+  lane :package_local do
+    sh(
+      "cd '#{repo_root}' && " \
+      "xcodebuild -project Topkit.xcodeproj -scheme Topkit -configuration Release " \
+      "-derivedDataPath /tmp/TopkitLocalPackageDerivedData build"
+    )
+
+    src = File.join("/tmp/TopkitLocalPackageDerivedData/Build/Products/Release/Topkit.app")
+    dst = File.expand_path("~/Desktop/Topkit-local.app")
+
+    sh("rm -rf '#{dst}'")
+    sh("/usr/bin/ditto '#{src}' '#{dst}'")
+    sh("/usr/bin/xattr -dr com.apple.quarantine '#{dst}' || true")
+
+    UI.success("Local app: #{dst}")
+  end
+
+  desc "Archive and upload a build to TestFlight (no submission)"
+  lane :upload_build do
+    api_key = asc_api_key
+
+    profile_name = ENV.fetch("APPSTORE_PROVISIONING_PROFILE_NAME")
+
+    build_mac_app(
+      project: File.join(repo_root, "Topkit.xcodeproj"),
+      scheme: "Topkit-AppStore",
+      configuration: "AppStore",
+      clean: true,
+      derived_data_path: "/tmp/TopkitAppStoreDerivedData",
+      export_method: "app-store",
+      export_options: {
+        signingStyle: "manual",
+        provisioningProfiles: {
+          "com.topkit.app" => profile_name
+        }
+      }
+    )
+
+    # TestFlight, not `upload_to_app_store`. deliver always ensures an App Store
+    # *version* first, and that call hard-fails once the current version is locked —
+    # on 2 Aug 2026 1.0 went to PENDING_DEVELOPER_RELEASE and fire died with "You
+    # cannot create a new version of the App in the current state" *before* uploading
+    # the binary. TestFlight needs no App Store version at all, and testing here only
+    # ever happens on TestFlight. Real submissions stay with the `release` lane, which
+    # legitimately does need the version.
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Upload App Preview videos to App Store Connect (max 3 per locale)"
+  lane :upload_app_previews do
+    upload_app_previews_to_asc
+  end
+
+  desc "Upload listing copy + review notes only (no binary, no screenshots/previews)"
+  lane :upload_listing_copy do
+    validate_app_store_metadata
+    api_key = asc_api_key
+
+    deliver(
+      api_key: api_key,
+      platform: "osx",
+      force: true,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false,
+      run_precheck_before_submit: false,
+      submit_for_review: false,
+      metadata_path: File.join(repo_root, "fastlane/metadata"),
+      app_review_information: {
+        notes: File.read(File.join(repo_root, "APP_STORE_REVIEW_NOTES.md")),
+        contact_email: ENV.fetch("APP_REVIEW_CONTACT_EMAIL"),
+        contact_first_name: ENV.fetch("APP_REVIEW_CONTACT_FIRST_NAME"),
+        contact_last_name: ENV.fetch("APP_REVIEW_CONTACT_LAST_NAME"),
+        contact_phone: ENV.fetch("APP_REVIEW_CONTACT_PHONE")
+      }
+    )
+  end
+
+  desc "Upload metadata/screenshots/review notes only (no binary upload)"
+  lane :upload_metadata do
+    validate_app_store_metadata
+    api_key = asc_api_key
+
+    deliver(
+      api_key: api_key,
+      platform: "osx",
+      force: true,
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      skip_metadata: false,
+      run_precheck_before_submit: false,
+      metadata_path: File.join(repo_root, "fastlane/metadata"),
+      screenshots_path: File.join(repo_root, "fastlane/screenshots"),
+      app_review_information: {
+        notes: File.read(File.join(repo_root, "APP_STORE_REVIEW_NOTES.md")),
+        contact_email: ENV.fetch("APP_REVIEW_CONTACT_EMAIL"),
+        contact_first_name: ENV.fetch("APP_REVIEW_CONTACT_FIRST_NAME"),
+        contact_last_name: ENV.fetch("APP_REVIEW_CONTACT_LAST_NAME"),
+        contact_phone: ENV.fetch("APP_REVIEW_CONTACT_PHONE")
+      }
+    )
+  end
+
+  desc "Upload metadata, screenshots, and app previews (no binary upload)"
+  lane :upload_store_listing do
+    upload_metadata
+    upload_app_previews
+  end
+
+  desc "Upload build + metadata and submit the latest build for review"
+  lane :release do
+    api_key = asc_api_key
+    profile_name = ENV.fetch("APPSTORE_PROVISIONING_PROFILE_NAME")
+
+    ci
+
+    build_mac_app(
+      project: File.join(repo_root, "Topkit.xcodeproj"),
+      scheme: "Topkit-AppStore",
+      configuration: "AppStore",
+      clean: true,
+      derived_data_path: "/tmp/TopkitAppStoreDerivedData",
+      export_method: "app-store",
+      export_options: {
+        signingStyle: "manual",
+        provisioningProfiles: {
+          "com.topkit.app" => profile_name
+        }
+      }
+    )
+
+    upload_to_app_store(
+      api_key: api_key,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      precheck_include_in_app_purchases: false
+    )
+
+    validate_app_store_metadata
+
+    deliver(
+      api_key: api_key,
+      platform: "osx",
+      force: true,
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      skip_metadata: false,
+      run_precheck_before_submit: false,
+      metadata_path: File.join(repo_root, "fastlane/metadata"),
+      screenshots_path: File.join(repo_root, "fastlane/screenshots"),
+      app_review_information: {
+        notes: File.read(File.join(repo_root, "APP_STORE_REVIEW_NOTES.md")),
+        contact_email: ENV.fetch("APP_REVIEW_CONTACT_EMAIL"),
+        contact_first_name: ENV.fetch("APP_REVIEW_CONTACT_FIRST_NAME"),
+        contact_last_name: ENV.fetch("APP_REVIEW_CONTACT_LAST_NAME"),
+        contact_phone: ENV.fetch("APP_REVIEW_CONTACT_PHONE")
+      },
+      submit_for_review: true,
+      automatic_release: false
+    )
+  end
+end
+
+def repo_root
+  @repo_root ||= File.expand_path("..", __dir__)
+end
+
+def fire_working_tree_dirty?
+  sh("cd '#{repo_root}' && git status --porcelain", log: false).to_s.strip != ""
+end
+
+# Automated pre-commit gates only. Cursor/agent must still do a real review (see .cursor/rules/topkit-fire-red-team.mdc).
+private_lane :red_team_automated do
+  UI.header("Red team (automated safety net)")
+
+  sh("cd '#{repo_root}' && git status --short")
+
+  diff_stat = sh("cd '#{repo_root}' && git diff --stat", log: true)
+  staged_stat = sh("cd '#{repo_root}' && git diff --cached --stat", log: true)
+
+  if diff_stat.to_s.strip.empty? && staged_stat.to_s.strip.empty?
+    UI.message("No tracked-file diff; continuing (commit/push skipped later if tree stays clean).")
+  end
+
+  # Paths that would be included by `git add -A` (untracked/modified/staged), without staging yet.
+  names_script = <<~SH
+    cd '#{repo_root}' && { git diff --name-only; git diff --cached --name-only; git ls-files --others --exclude-standard; } | sort -u
+  SH
+  names = sh(names_script, log: true).to_s.split("\n").map(&:strip).reject(&:empty?)
+
+  blocked_paths = [
+    # Real secrets live in local, gitignored env files; never let them slip into a commit.
+    # `.env.default` / `.env.fastlane.example` are placeholder templates and are allowed.
+    /(^|\/)\.env$/i,
+    /(^|\/)\.env\.local$/i,
+    /(^|\/)\.env\..*\.local$/i,
+    /(^|\/)\.env\.fastlane$/i,
+    /\.p8$/i,
+    /AuthKey.*\.p8$/i,
+    /\.pem$/i,
+    /id_rsa/i,
+    /\.cursor\/.*mcp\.json$/i
+  ]
+
+  names.each do |path|
+    blocked_paths.each do |rx|
+      next unless path =~ rx
+
+      UI.user_error!("Blocked path from shipping: #{path} (matches #{rx.inspect}). Remove from commit or add to .gitignore if local-only.")
+    end
+  end
+
+  diff_text = [
+    sh("cd '#{repo_root}' && git diff", log: true),
+    sh("cd '#{repo_root}' && git diff --cached", log: true)
+  ].join("\n")
+
+  # High-confidence secret material (avoid broad "password" / "token" — too many false positives).
+  high_confidence = [
+    [/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY/, "PEM private key block"],
+    [/AKIA[0-9A-Z]{16}/, "possible AWS access key id"],
+    [/\bgh[pous]_[A-Za-z0-9_]{20,}/, "possible GitHub token"],
+    [/\bxox[baprs]-[A-Za-z0-9-]+/, "possible Slack token"],
+    [/\bsk_live_[0-9a-zA-Z]{20,}/, "possible Stripe secret key"]
+  ]
+
+  high_confidence.each do |rx, label|
+    next unless diff_text =~ rx
+
+    UI.user_error!("Automated check: possible #{label} in diff. Remove before shipping.")
+  end
+
+  if names.any? { |path| path.start_with?("fastlane/metadata/") }
+    sh("cd '#{repo_root}' && scripts/validate-app-store-metadata.sh")
+  end
+
+  UI.important(
+    "Automated checks passed. This does NOT replace a human/AI review of intent, architecture, and necessity."
+  )
+end
+
+private_lane :commit_and_push_fire do
+  message = ENV["FIRE_COMMIT_MESSAGE"].to_s.strip
+  if message.empty?
+    UI.user_error!("Missing commit message. Run: fastlane fire message:\"Your commit message\"")
+  end
+
+  sh("cd '#{repo_root}' && git add -A")
+
+  staged_files = sh(
+    "cd '#{repo_root}' && git diff --cached --name-only",
+    log: true
+  ).to_s.strip
+
+  UI.user_error!("Nothing staged to commit.") if staged_files.empty?
+
+  sh("cd '#{repo_root}' && git commit -m #{message.shellescape}")
+
+  branch = sh("cd '#{repo_root}' && git rev-parse --abbrev-ref HEAD").strip
+  UI.message("Pushing branch: #{branch}")
+
+  sh("cd '#{repo_root}' && git push --force-with-lease origin #{branch.shellescape}")
+end
+
+private_lane :upload_app_previews_to_asc do
+  set_spaceship_api_token
+
+  previews_root = File.join(repo_root, "fastlane/app-previews")
+  max_previews = 3
+
+  app = Spaceship::ConnectAPI::App.find("com.topkit.app")
+  version = app.get_app_store_versions(filter: { platform: "MAC_OS" }).find { |v| v.version_string == "1.0" }
+  UI.user_error!("App Store version 1.0 not found") unless version
+
+  %w[en-US en-GB].each do |locale|
+    loc = version.get_app_store_version_localizations(includes: "appPreviewSets").find { |l| l.locale == locale }
+    UI.user_error!("Missing localization #{locale}") unless loc
+
+    desktop_set = Array(loc.app_preview_sets).find { |s| s.preview_type == "DESKTOP" }
+    unless desktop_set
+      desktop_set = loc.create_app_preview_set(attributes: { previewType: "DESKTOP" })
+    end
+
+    desktop_set = Spaceship::ConnectAPI::AppPreviewSet.get(app_preview_set_id: desktop_set.id, includes: "appPreviews")
+    Array(desktop_set.app_previews).each do |preview|
+      preview.delete!
+    end
+
+    paths = Dir[File.join(previews_root, locale, "*.mp4")].sort.take(max_previews)
+    UI.user_error!("No app preview videos found for #{locale}") if paths.empty?
+
+    paths.each do |path|
+      UI.message("Uploading #{locale} app preview: #{File.basename(path)}")
+      desktop_set.upload_preview(path: path, wait_for_processing: false)
+    end
+  end
+
+  UI.success("Uploaded app previews for en-US and en-GB (max #{max_previews} per locale).")
+end
+
+private_lane :validate_app_store_metadata do
+  sh("cd '#{repo_root}' && scripts/validate-app-store-metadata.sh")
+end
+
+private_lane :set_spaceship_api_token do
+  if ENV["ASC_KEY_CONTENT_BASE64"] && !ENV["ASC_KEY_CONTENT_BASE64"].empty?
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_CONTENT_BASE64"),
+      is_key_content_base64: true
+    )
+  else
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      filepath: ENV.fetch("ASC_KEY_FILEPATH")
+    )
+  end
+end
+
+private_lane :asc_api_key do
+  key_id = ENV.fetch("ASC_KEY_ID")
+  issuer_id = ENV.fetch("ASC_ISSUER_ID")
+
+  if ENV["ASC_KEY_CONTENT_BASE64"] && !ENV["ASC_KEY_CONTENT_BASE64"].empty?
+    return app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: ENV.fetch("ASC_KEY_CONTENT_BASE64"),
+      is_key_content_base64: true,
+      duration: 1200
+    )
+  end
+
+  app_store_connect_api_key(
+    key_id: key_id,
+    issuer_id: issuer_id,
+    key_filepath: ENV.fetch("ASC_KEY_FILEPATH"),
+    duration: 1200
+  )
+end
