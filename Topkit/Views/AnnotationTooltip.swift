@@ -222,6 +222,8 @@ final class AnnotationTooltip {
         else { return }
 
         let panel = panelForDisplay(on: screen)
+        // A preview of a clipboard row hidden from capture is hidden with it (TEC-241).
+        panel.sharingType = window.sharingType == .none ? .none : .readOnly
         let label = self.label!
         let imageView = self.imageView!
         let isDark = view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua

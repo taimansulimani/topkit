@@ -237,7 +237,11 @@ class ScreenshotManager: ObservableObject {
         // is in the snapshot; the marquee is drawn on that static image, so a click to drag does
         // not depend on the live menu staying open.
         isCapturingFrozenGrabs = true
+        // Clipboard history never goes in the grab: an open clipboard menu closes and
+        // its window is hidden from capture until the displays are read (TEC-241).
+        ClipboardCaptureShield.shared.setActive(true, for: .screenshot)
         ScreenCapture.captureAllDisplays(NSScreen.screens) { [weak self] frozenPairs in
+            ClipboardCaptureShield.shared.setActive(false, for: .screenshot)
             guard let self = self else { return }
             self.isCapturingFrozenGrabs = false
             guard let frozenPairs else {

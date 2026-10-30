@@ -1,1 +1,6 @@
-Initial release. Clipboard history, annotated screenshots, screen recording with optional live subtitles, colour picker, screen guides, magnify, and halo — all from the menu bar.
+- Clipboard search is now instant, even with a long history full of big text and images.
+- Double-click an annotation to change its colour.
+- Delete a recording straight from the video editor. It goes to the Bin, so you can put it back.
+- The clipboard history no longer shows up in your screenshots or recordings. Open it mid-recording and only you see it.
+- Typing a grid size now works on every monitor, not just the main one.
+- Permission requests now open in front and ready to answer.

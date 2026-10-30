@@ -59,7 +59,10 @@
 		CPNT1234567890ABCDEFT002 /* ClipboardPinningHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPNT1234567890ABCDEFT001 /* ClipboardPinningHelpersTests.swift */; };
 		CRMV1234567890ABCDEF0002 /* ClipboardRowMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CRMV1234567890ABCDEF0001 /* ClipboardRowMenuView.swift */; };
 		CSFL1234567890ABCDEF0002 /* ClipboardSearchFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSFL1234567890ABCDEF0001 /* ClipboardSearchFilter.swift */; };
+		OSPL1234567890ABCDEF0002 /* OrderedSplice.swift in Sources */ = {isa = PBXBuildFile; fileRef = OSPL1234567890ABCDEF0001 /* OrderedSplice.swift */; };
 		CSFT1234567890ABCDEFT002 /* ClipboardSearchFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSFT1234567890ABCDEFT001 /* ClipboardSearchFilterTests.swift */; };
+		OSPT1234567890ABCDEFT002 /* OrderedSpliceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OSPT1234567890ABCDEFT001 /* OrderedSpliceTests.swift */; };
+		CSMT1234567890ABCDEFT002 /* ClipboardSearchMenuViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSMT1234567890ABCDEFT001 /* ClipboardSearchMenuViewTests.swift */; };
 		CSMV1234567890ABCDEF0002 /* ClipboardSearchMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSMV1234567890ABCDEF0001 /* ClipboardSearchMenuView.swift */; };
 		D496C5EF4B6B5EB17FCA2CB6 /* Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC27B409BFC1D48A536EF7F /* Annotation.swift */; };
 		D5A9A3F96B5D42F8BA5251D9 /* ScreenshotDirectoryValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41CFB21ADBF7423B9E752BB1 /* ScreenshotDirectoryValidator.swift */; };
@@ -93,9 +96,14 @@
 		RECBF000000000000000MGR1 /* ScreenRecordingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */; };
 		RECBF000000000000000PLY1 /* RecordingPlayerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */; };
 		RECBF000000000000000SUP1 /* RecordingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000SUP1 /* RecordingSupport.swift */; };
+		ACTWBF00000000000000APP1 /* AppActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACTWFR00000000000000APP1 /* AppActivation.swift */; };
+		ACTWBF00000000000000TST1 /* ActivationWaitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */; };
+		TEC241BF0000000000SHLD1 /* ClipboardCaptureShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */; };
+		TEC241BF0000000000TST1 /* ClipboardCaptureShieldTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */; };
 		RECBF000000000000000TOA1 /* ToastPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TOA1 /* ToastPresenter.swift */; };
 		RECBF000000000000000TST1 /* RecordingSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST1 /* RecordingSupportTests.swift */; };
 		RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST2 /* TrimRangeTests.swift */; };
+		RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST3 /* RecordingDiscardTests.swift */; };
 		REZE1234567890ABCDEF01 /* ResizeEdge.swift in Sources */ = {isa = PBXBuildFile; fileRef = REZE1234567890ABCDEF02 /* ResizeEdge.swift */; };
 		S1C2R3E4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */; };
 		S3C4R5E6N7S8H9O0T1M2A3N4A5G6E7R8 /* ScreenshotAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */; };
@@ -195,7 +203,10 @@
 		CPNT1234567890ABCDEFT001 /* ClipboardPinningHelpersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardPinningHelpersTests.swift; sourceTree = "<group>"; };
 		CRMV1234567890ABCDEF0001 /* ClipboardRowMenuView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardRowMenuView.swift; sourceTree = "<group>"; };
 		CSFL1234567890ABCDEF0001 /* ClipboardSearchFilter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardSearchFilter.swift; sourceTree = "<group>"; };
+		OSPL1234567890ABCDEF0001 /* OrderedSplice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderedSplice.swift; sourceTree = "<group>"; };
 		CSFT1234567890ABCDEFT001 /* ClipboardSearchFilterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardSearchFilterTests.swift; sourceTree = "<group>"; };
+		OSPT1234567890ABCDEFT001 /* OrderedSpliceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderedSpliceTests.swift; sourceTree = "<group>"; };
+		CSMT1234567890ABCDEFT001 /* ClipboardSearchMenuViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardSearchMenuViewTests.swift; sourceTree = "<group>"; };
 		CSMV1234567890ABCDEF0001 /* ClipboardSearchMenuView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardSearchMenuView.swift; sourceTree = "<group>"; };
 		D3A587C39C0BCC318587030B /* ClipboardAutoClearPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClipboardAutoClearPolicy.swift; sourceTree = "<group>"; };
 		D4412B085D0D4855A6BD2237 /* MultiMonitorHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiMonitorHelperTests.swift; sourceTree = "<group>"; };
@@ -229,9 +240,14 @@
 		RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecordingManager.swift; sourceTree = "<group>"; };
 		RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPlayerWindowController.swift; sourceTree = "<group>"; };
 		RECFR000000000000000SUP1 /* RecordingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSupport.swift; sourceTree = "<group>"; };
+		ACTWFR00000000000000APP1 /* AppActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivation.swift; sourceTree = "<group>"; };
+		ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivationWaitTests.swift; sourceTree = "<group>"; };
+		TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCaptureShield.swift; sourceTree = "<group>"; };
+		TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCaptureShieldTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TOA1 /* ToastPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastPresenter.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST1 /* RecordingSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSupportTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST2 /* TrimRangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrimRangeTests.swift; sourceTree = "<group>"; };
+		RECFR000000000000000TST3 /* RecordingDiscardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDiscardTests.swift; sourceTree = "<group>"; };
 		REZE1234567890ABCDEF02 /* ResizeEdge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeEdge.swift; sourceTree = "<group>"; };
 		S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotManager.swift; sourceTree = "<group>"; };
 		S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnnotationView.swift; sourceTree = "<group>"; };
@@ -301,6 +317,8 @@
 				A9A925E032574F418044F775 /* ClipboardItemTests.swift */,
 				FZMT1234567890ABCDEFT001 /* FuzzyMatcherTests.swift */,
 				CSFT1234567890ABCDEFT001 /* ClipboardSearchFilterTests.swift */,
+				OSPT1234567890ABCDEFT001 /* OrderedSpliceTests.swift */,
+				CSMT1234567890ABCDEFT001 /* ClipboardSearchMenuViewTests.swift */,
 				CPNT1234567890ABCDEFT001 /* ClipboardPinningHelpersTests.swift */,
 				5BD6041412764C1CBE99F7A9 /* ClipboardMenuItemTests.swift */,
 				B9F0B0696EEE4913B6FB6189 /* ClipboardPasteboardHelpersTests.swift */,
@@ -321,7 +339,10 @@
 				9DE532E232B34502B75184EF /* ImageHelpersTests.swift */,
 				D4412B085D0D4855A6BD2237 /* MultiMonitorHelperTests.swift */,
 				RECFR000000000000000TST1 /* RecordingSupportTests.swift */,
+				ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */,
+				TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */,
 				RECFR000000000000000TST2 /* TrimRangeTests.swift */,
+				RECFR000000000000000TST3 /* RecordingDiscardTests.swift */,
 				8AE6BF72AB9E4F758A962264 /* RectangleSizeValidatorTests.swift */,
 				SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */,
 				ATST000000000000000A0002 /* AnnotationToolShortcutsTests.swift */,
@@ -395,6 +416,8 @@
 				M4G5N6I7F8Y9G0L1A2S3S4 /* MagnifyingGlassManager.swift */,
 				H2A3L4O5M6A7N8A9G0E1R2 /* HaloManager.swift */,
 				RECFR000000000000000SUP1 /* RecordingSupport.swift */,
+				ACTWFR00000000000000APP1 /* AppActivation.swift */,
+				TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */,
 				CAPFR000000000000000MOD1 /* CaptionModel.swift */,
 				CAPFR000000000000000ENG1 /* CaptionEngine.swift */,
 				CAPFR000000000000000BRN1 /* CaptionBurnIn.swift */,
@@ -430,6 +453,7 @@
 				479821B05C94DD4AD3D3223E /* ClipboardSecurity.swift */,
 				FZMT1234567890ABCDEF0001 /* FuzzyMatcher.swift */,
 				CSFL1234567890ABCDEF0001 /* ClipboardSearchFilter.swift */,
+				OSPL1234567890ABCDEF0001 /* OrderedSplice.swift */,
 				CPIN1234567890ABCDEF0001 /* ClipboardPinningHelpers.swift */,
 				D3A587C39C0BCC318587030B /* ClipboardAutoClearPolicy.swift */,
 			);
@@ -482,6 +506,7 @@
 				A5B6C7D8E9F0A1B2C3D4E5F8 /* Resources */,
 				IC0NSCR1PT2B3U4I5L6D7PH8 /* Compile Tahoe Icon */,
 				PRBP000000000000000000C3 /* Embed Helper Tools */,
+				B0D1D5EPA2A7E0GUARD00001 /* Check Bundle ID */,
 				97424AA9E0A08B117532AE59 /* Stamp Build Number */,
 			);
 			buildRules = (
@@ -590,7 +615,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		97424AA9E0A08B117532AE59 /* Stamp Build Number */ = {
+		B0D1D5EPA2A7E0GUARD00001 /* Check Bundle ID */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -600,6 +625,26 @@
 			);
 			inputPaths = (
 			);
+			name = "Check Bundle ID";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Only the App Store build may be com.topkit.app. macOS ties permissions to bundle id plus\n# signature, so a local build with the store id revokes the store app's Screen Recording\n# and other grants, and \"Quit & Reopen\" relaunches the store copy. Local builds are\n# com.topkit.app.dev (Topkit Dev).\nset -eu\nSTORE_ID=com.topkit.app\nif [ \"${CONFIGURATION}\" = \"AppStore\" ]; then\n  if [ \"${PRODUCT_BUNDLE_IDENTIFIER}\" != \"$STORE_ID\" ]; then\n    echo \"error: AppStore build must be $STORE_ID, got ${PRODUCT_BUNDLE_IDENTIFIER}\" >&2; exit 1\n  fi\nelif [ \"${PRODUCT_BUNDLE_IDENTIFIER}\" = \"$STORE_ID\" ]; then\n  echo \"error: ${CONFIGURATION} build uses the store id $STORE_ID; local builds must be com.topkit.app.dev\" >&2; exit 1\nelif [ \"${FULL_PRODUCT_NAME}\" = \"Topkit.app\" ]; then\n  echo \"error: ${CONFIGURATION} build is named Topkit.app; local builds must be Topkit Dev.app so Privacy & Security tells them apart\" >&2; exit 1\nfi\n";
+		};
+		97424AA9E0A08B117532AE59 /* Stamp Build Number */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
 			name = "Stamp Build Number";
 			outputFileListPaths = (
 			);
@@ -607,7 +652,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# The build number About shows. Taken from the git commit count: monotonic, and it\n# maps straight back to a commit. Stamped into the built bundle only, so the source\n# Info.plist stays put and no build dirties the tree. Code signing runs after this\n# phase, so the edit is inside the signature.\nset -euo pipefail\nPLIST=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n[ -f \"$PLIST\" ] || exit 0\nBUILD=\"$(cd \"${SRCROOT}\" && git rev-list --count HEAD 2>/dev/null || true)\"\n[ -n \"$BUILD\" ] || exit 0\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD\" \"$PLIST\"\n";
+			shellScript = "# The build number About shows. Taken from the git commit count plus 1000: monotonic, and\n# it maps straight back to a commit. The offset is because the repo was re-rooted for the\n# open-source release on 1 Sep 2026 (count restarted at 1) while App Store Connect already\n# held builds up to 253; macOS builds must keep rising, so never lower it. Stamped into the built bundle only, so the source\n# Info.plist stays put and no build dirties the tree. Code signing runs after this\n# phase, so the edit is inside the signature.\nset -euo pipefail\nPLIST=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n[ -f \"$PLIST\" ] || exit 0\nCOUNT=\"$(cd \"${SRCROOT}\" && git rev-list --count HEAD 2>/dev/null || true)\"\n[ -n \"$COUNT\" ] || exit 0\nBUILD=$((COUNT + 1000))\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD\" \"$PLIST\"\n";
 		};
 		IC0NSCR1PT2B3U4I5L6D7PH8 /* Compile Tahoe Icon */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -638,6 +683,8 @@
 				1716F4EC4EC743ED99EB3418 /* ClipboardItemTests.swift in Sources */,
 				FZMT1234567890ABCDEFT002 /* FuzzyMatcherTests.swift in Sources */,
 				CSFT1234567890ABCDEFT002 /* ClipboardSearchFilterTests.swift in Sources */,
+				OSPT1234567890ABCDEFT002 /* OrderedSpliceTests.swift in Sources */,
+				CSMT1234567890ABCDEFT002 /* ClipboardSearchMenuViewTests.swift in Sources */,
 				CPNT1234567890ABCDEFT002 /* ClipboardPinningHelpersTests.swift in Sources */,
 				E71D60ABE7C74689A394FB71 /* ClipboardMenuItemTests.swift in Sources */,
 				8AF171F4AF20429D958A8ED6 /* ClipboardPasteboardHelpersTests.swift in Sources */,
@@ -658,7 +705,10 @@
 				B9046B3D5F2848589108DE05 /* ImageHelpersTests.swift in Sources */,
 				8BAE095A97B34C5E953E4D1C /* MultiMonitorHelperTests.swift in Sources */,
 				RECBF000000000000000TST1 /* RecordingSupportTests.swift in Sources */,
+				ACTWBF00000000000000TST1 /* ActivationWaitTests.swift in Sources */,
+				TEC241BF0000000000TST1 /* ClipboardCaptureShieldTests.swift in Sources */,
 				RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */,
+				RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */,
 				0077DD70640F423480F22E92 /* RectangleSizeValidatorTests.swift in Sources */,
 				SAVT00000000000000000001 /* ScreenshotAnnotationViewToolbarTests.swift in Sources */,
 				ATST000000000000000A0001 /* AnnotationToolShortcutsTests.swift in Sources */,
@@ -693,6 +743,8 @@
 				M3G4N5I6F7Y8G9L0A1S2S3 /* MagnifyingGlassManager.swift in Sources */,
 				H1A2L3O4M5A6N7A8G9E0R1 /* HaloManager.swift in Sources */,
 				RECBF000000000000000SUP1 /* RecordingSupport.swift in Sources */,
+				ACTWBF00000000000000APP1 /* AppActivation.swift in Sources */,
+				TEC241BF0000000000SHLD1 /* ClipboardCaptureShield.swift in Sources */,
 				CAPBF000000000000000MOD1 /* CaptionModel.swift in Sources */,
 				CAPBF000000000000000ENG1 /* CaptionEngine.swift in Sources */,
 				CAPBF000000000000000BRN1 /* CaptionBurnIn.swift in Sources */,
@@ -726,6 +778,7 @@
 				A8022370D55B5124BDF9B354 /* ClipboardSecurity.swift in Sources */,
 				FZMT1234567890ABCDEF0002 /* FuzzyMatcher.swift in Sources */,
 				CSFL1234567890ABCDEF0002 /* ClipboardSearchFilter.swift in Sources */,
+				OSPL1234567890ABCDEF0002 /* OrderedSplice.swift in Sources */,
 				CSMV1234567890ABCDEF0002 /* ClipboardSearchMenuView.swift in Sources */,
 				CRMV1234567890ABCDEF0002 /* ClipboardRowMenuView.swift in Sources */,
 				CPIN1234567890ABCDEF0002 /* ClipboardPinningHelpers.swift in Sources */,
@@ -784,12 +837,12 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.TopkitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Topkit.app/Contents/MacOS/Topkit";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Topkit Dev.app/Contents/MacOS/Topkit Dev";
 			};
 			name = Release;
 		};
@@ -815,9 +868,11 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.dev;
+				PRODUCT_MODULE_NAME = Topkit;
+				PRODUCT_NAME = "Topkit Dev";
+				TOPKIT_APP_NAME = "Topkit Dev";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "ALLOW_AUTOPASTE $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -838,7 +893,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.TopkitUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -860,7 +915,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.TopkitUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1005,9 +1060,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				TOPKIT_APP_NAME = Topkit;
 				PROVISIONING_PROFILE_SPECIFIER = Topkit;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "ALLOW_AUTOPASTE $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1029,7 +1085,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.TopkitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1104,7 +1160,7 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.TopkitUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1127,12 +1183,12 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.TopkitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Topkit.app/Contents/MacOS/Topkit";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Topkit Dev.app/Contents/MacOS/Topkit Dev";
 			};
 			name = Debug;
 		};
@@ -1158,9 +1214,11 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.topkit.app.dev;
+				PRODUCT_MODULE_NAME = Topkit;
+				PRODUCT_NAME = "Topkit Dev";
+				TOPKIT_APP_NAME = "Topkit Dev";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "ALLOW_AUTOPASTE $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

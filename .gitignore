@@ -108,6 +108,7 @@ iOSInjectionProject/
 # Claude Code / Cursor agent config
 # Rule files mirror .cursor/rules and are tracked; only machine-local state is ignored.
 .claude/settings.local.json
+.claude/worktrees/
 
 # Local README preview (not for GitHub)
 README.preview.html

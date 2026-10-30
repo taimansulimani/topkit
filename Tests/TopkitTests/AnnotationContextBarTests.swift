@@ -511,3 +511,156 @@ final class ContextBarHitTestTests: XCTestCase {
                       "with no tool armed, the bar must still claim its own clicks")
     }
 }
+
+/// TEC-237: double-click a mark to open the colour picker for it. Text keeps its
+/// double-click (edit the words); stickers and redaction have no colour.
+final class AnnotationDoubleClickColorTests: XCTestCase {
+
+    private let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+
+    override func tearDown() {
+        NSColorPanel.shared.orderOut(nil)
+        NSColorPanel.shared.setTarget(nil)
+        NSColorPanel.shared.setAction(nil)
+        super.tearDown()
+    }
+
+    private func overlayView() -> ScreenshotAnnotationView {
+        let view = ScreenshotAnnotationView(frame: screen, mode: .liveAnnotate)
+        view.setArmedTool(nil)
+        return view
+    }
+
+    private func mark(_ type: AnnotationTool, frame: NSRect, text: String? = nil, fontSize: CGFloat? = nil,
+                      colorMode: AnnotationColorMode = .solid) -> Annotation {
+        Annotation(id: UUID(), type: type, frame: frame, color: .red, thickness: 4,
+                   text: text, fontSize: fontSize, startPoint: nil, endPoint: nil,
+                   pathPoints: nil, stickerPointerDirection: nil, colorMode: colorMode)
+    }
+
+    /// Annotation space is top-left/Y-down; the overlay view is bottom-left/Y-up.
+    private func viewPoint(_ x: CGFloat, _ y: CGFloat) -> NSPoint {
+        NSPoint(x: x, y: screen.height - y)
+    }
+
+    private func doubleClick(_ view: ScreenshotAnnotationView, at point: NSPoint) {
+        view.handlePointerDown(at: point, clickCount: 1)
+        view.handlePointerUp()
+        view.handlePointerDown(at: point, clickCount: 2)
+        view.handlePointerUp()
+    }
+
+    // MARK: - Action per type
+
+    func testDoubleClickActionFollowsTheContextBarColourControl() {
+        XCTAssertEqual(ScreenshotAnnotationView.doubleClickAction(for: .text), .editText)
+        for tool: AnnotationTool in [.freehand, .rectangle, .circle, .arrow, .measure,
+                                     .numberBadge, .guide(.horizontal), .guide(.vertical), .grid] {
+            XCTAssertEqual(ScreenshotAnnotationView.doubleClickAction(for: tool), .changeColor, "\(tool)")
+        }
+        XCTAssertEqual(ScreenshotAnnotationView.doubleClickAction(for: .sticker(.redX)), .none)
+        XCTAssertEqual(ScreenshotAnnotationView.doubleClickAction(for: .blur), .none)
+    }
+
+    // MARK: - Behaviour
+
+    func testDoubleClickOnAShapeSelectsItAndOpensTheColourPanel() {
+        let view = overlayView()
+        let rect = mark(.rectangle, frame: NSRect(x: 200, y: 200, width: 80, height: 60))
+        view._setAnnotationsForTesting([rect])
+
+        doubleClick(view, at: viewPoint(240, 230))
+
+        XCTAssertEqual(view._selectedAnnotationIdForTesting, rect.id)
+        XCTAssertTrue(NSColorPanel.shared.isVisible, "double-click must open the colour panel")
+        XCTAssertEqual(view._annotationsForTesting().first?.frame, rect.frame,
+                       "the double-click must not move the mark")
+    }
+
+    /// A rectangle's stroke sits on its own resize edge; the second click must open
+    /// the colour panel there rather than start a resize.
+    func testDoubleClickOnARectangleStrokeOpensTheColourPanel() {
+        let view = overlayView()
+        let rect = mark(.rectangle, frame: NSRect(x: 200, y: 200, width: 80, height: 60))
+        view._setAnnotationsForTesting([rect])
+
+        view.handlePointerDown(at: viewPoint(200, 230), clickCount: 1)
+        view.handlePointerUp()
+        view.handlePointerDown(at: viewPoint(200, 230), clickCount: 2)
+
+        XCTAssertTrue(NSColorPanel.shared.isVisible)
+        XCTAssertFalse(view.isMidGesture, "the second click must not start a resize")
+        view.handlePointerUp()
+        XCTAssertEqual(view._annotationsForTesting().first?.frame, rect.frame)
+    }
+
+    func testSingleClickSelectsWithoutOpeningTheColourPanel() {
+        let view = overlayView()
+        let rect = mark(.rectangle, frame: NSRect(x: 200, y: 200, width: 80, height: 60))
+        view._setAnnotationsForTesting([rect])
+
+        view.handlePointerDown(at: viewPoint(240, 230), clickCount: 1)
+        view.handlePointerUp()
+
+        XCTAssertEqual(view._selectedAnnotationIdForTesting, rect.id)
+        XCTAssertFalse(NSColorPanel.shared.isVisible)
+    }
+
+    func testSingleClickDragStillMovesTheMark() {
+        let view = overlayView()
+        let rect = mark(.rectangle, frame: NSRect(x: 200, y: 200, width: 80, height: 60))
+        view._setAnnotationsForTesting([rect])
+
+        view.handlePointerDown(at: viewPoint(240, 230), clickCount: 1)
+        view.handlePointerDragged(at: viewPoint(290, 230), modifierFlags: [])
+        view.handlePointerUp()
+
+        XCTAssertEqual(view._annotationsForTesting().first?.frame.origin.x ?? 0, 250, accuracy: 0.5)
+        XCTAssertFalse(NSColorPanel.shared.isVisible)
+    }
+
+    func testDoubleClickOnAStickerOnlySelectsIt() {
+        let view = overlayView()
+        let sticker = mark(.sticker(.redX), frame: NSRect(x: 400, y: 400, width: 40, height: 40))
+        view._setAnnotationsForTesting([sticker])
+
+        doubleClick(view, at: viewPoint(420, 420))
+
+        XCTAssertEqual(view._selectedAnnotationIdForTesting, sticker.id)
+        XCTAssertFalse(NSColorPanel.shared.isVisible, "stickers have no colour")
+    }
+
+    func testDoubleClickOnTextStillEditsTheText() {
+        let view = overlayView()
+        let text = mark(.text, frame: NSRect(x: 500, y: 500, width: 160, height: 40), text: "Hello", fontSize: 24)
+        view._setAnnotationsForTesting([text])
+
+        doubleClick(view, at: viewPoint(515, 515))
+
+        XCTAssertTrue(view._isEditingTextForTesting, "double-click on text must still edit it")
+        XCTAssertFalse(NSColorPanel.shared.isVisible)
+    }
+
+    /// Opening the panel must not touch the mark; picking a colour recolours it,
+    /// and one undo puts the old colour back.
+    func testPickingAColourRecoloursTheMarkAndUndoes() {
+        let view = overlayView()
+        let rect = mark(.rectangle, frame: NSRect(x: 200, y: 200, width: 80, height: 60), colorMode: .rainbow)
+        view._setAnnotationsForTesting([rect])
+
+        doubleClick(view, at: viewPoint(240, 230))
+        XCTAssertEqual(view._annotationsForTesting().first?.colorMode, .rainbow,
+                       "just opening the panel must not change the mark")
+
+        view._pickColorForTesting(.blue)
+
+        guard let recoloured = view._annotationsForTesting().first else { return XCTFail("mark gone") }
+        XCTAssertEqual(recoloured.color.usingColorSpace(.sRGB), NSColor.blue.usingColorSpace(.sRGB))
+        XCTAssertEqual(recoloured.colorMode, .solid)
+
+        view._undoForTesting()
+        guard let restored = view._annotationsForTesting().first else { return XCTFail("mark gone") }
+        XCTAssertEqual(restored.color.usingColorSpace(.sRGB), NSColor.red.usingColorSpace(.sRGB))
+        XCTAssertEqual(restored.colorMode, .rainbow)
+    }
+}

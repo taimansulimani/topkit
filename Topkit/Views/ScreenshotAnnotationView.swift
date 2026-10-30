@@ -1827,6 +1827,22 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
         keyMonitors.removeAll()
     }
     
+    /// Entry point for this view's local key monitor. Returns true to swallow.
+    ///
+    /// Local monitors are app-wide. Annotate puts one canvas on every display, so each
+    /// canvas's monitor sees every keyDown, including keys typed into a field on another
+    /// display. Each decides from its own state only: the canvas without the field took
+    /// Return as Save and Delete / ⌘Z / ⌘C / ⌘V as its own shortcuts and swallowed them
+    /// before the field editor saw them, so a typed grid size never committed. A key
+    /// aimed at another canvas's window is that canvas's to handle.
+    private func consumesMonitoredKeyEvent(_ event: NSEvent) -> Bool {
+        if let target = event.window, target !== window,
+           target.contentView is ScreenshotAnnotationView {
+            return false
+        }
+        return handleAnnotationKeyMonitorEvent(event)
+    }
+
     /// Returns true if the event was handled (swallow for local monitor).
     private func handleAnnotationKeyMonitorEvent(_ event: NSEvent) -> Bool {
         if let textField = inlineTextField {
@@ -1895,7 +1911,7 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
         // without Input Monitoring. The annotation window is key, so this suffices.
         if let local = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
             guard let self = self else { return event }
-            if self.handleAnnotationKeyMonitorEvent(event) {
+            if self.consumesMonitoredKeyEvent(event) {
                 return nil
             }
             return event
@@ -2603,6 +2619,10 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
         let refPoint = convertPointToAnnotationSpace(screenshotPoint)
 
         if let hit = gridLabelHit(at: refPoint) {
+            // A label on another display arrives proxied from its mirror overlay. The
+            // field would open outside this window, where nothing typed shows, so move
+            // the window to that display first, as the text tool does.
+            _ = rebasePointAfterWindowMoveIfNeeded(point)
             beginGridSizeEdit(annotationId: hit.id, label: hit.label)
             return
         }
@@ -2626,6 +2646,26 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
             }
         }
         
+        // 0) Double-click on a colourable mark opens the colour picker for it. Checked
+        // before the resize handles: a rectangle's stroke sits on its own resize edge,
+        // so the second click would otherwise start a resize. Text keeps its own
+        // double-click (edit the words), handled with the selection below.
+        if clickCount == 2,
+           let target = annotationForDoubleClick(at: refPoint),
+           Self.doubleClickAction(for: target.type) == .changeColor {
+            if inlineTextField != nil {
+                finishInlineText()
+            }
+            selectedAnnotationId = target.id
+            isDragging = false
+            pendingDragAnnotationId = nil
+            pendingDragStartRefPoint = nil
+            updateUIForSelectedAnnotation(target)
+            setNeedsDisplay(bounds)
+            showColorPicker()
+            return
+        }
+
         // 1) Annotation resize: if we have a selected annotation, check if click is on its resize edge (annotation-space)
         if let selectedId = selectedAnnotationId,
            let index = annotations.firstIndex(where: { $0.id == selectedId }) {
@@ -2677,7 +2717,7 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
             updateUIForSelectedAnnotation(clickedAnnotation)
             setNeedsDisplay(bounds)
             // Double-click on text annotation: start editing
-            if clickCount == 2, case .text = clickedAnnotation.type {
+            if clickCount == 2, Self.doubleClickAction(for: clickedAnnotation.type) == .editText {
                 if !bounds.contains(point) {
                     _ = rebasePointAfterWindowMoveIfNeeded(point)
                 }
@@ -3319,6 +3359,36 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
         return nil
     }
     
+    /// What a double-click on an existing mark does.
+    enum DoubleClickAction: Equatable {
+        /// Text: edit the words in place.
+        case editText
+        /// Anything with a Colour control: open the colour picker for it.
+        case changeColor
+        /// Stickers and redaction have no colour, so a double-click just selects.
+        case none
+    }
+
+    /// Pure function of the type, so it can be tested without a view. Follows the
+    /// context bar: a mark gets the colour picker exactly when its bar has Colour.
+    static func doubleClickAction(for tool: AnnotationTool) -> DoubleClickAction {
+        if case .text = tool { return .editText }
+        return AnnotationContextBar.Control.controls(for: tool).contains(.color) ? .changeColor : .none
+    }
+
+    /// The mark a double-click lands on. The selected mark wins anywhere in its
+    /// resize zone (same priority as the resize handles), else the topmost hit.
+    private func annotationForDoubleClick(at refPoint: NSPoint) -> Annotation? {
+        if let id = selectedAnnotationId,
+           let selected = annotations.first(where: { $0.id == id }) {
+            let zone = effectiveFrame(for: selected).insetBy(dx: -kResizeHandleSize, dy: -kResizeHandleSize)
+            if zone.contains(refPoint) || arrowResizeHandleAt(point: refPoint, annotation: selected) != nil {
+                return selected
+            }
+        }
+        return findAnnotation(at: refPoint)
+    }
+
     private var inlineTextField: NSTextField?
     private var inlineTextAnnotationId: UUID?
     private var isCreatingTextField = false
@@ -3816,6 +3886,15 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
     @discardableResult func _deleteSelectedForTesting() -> Bool { deleteSelectedAnnotation() }
     @discardableResult func _pasteForTesting() -> Bool { pasteAnnotations() }
     func _contextBarOriginForTesting() -> NSPoint? { contextBar?.frame.origin }
+    var _selectedAnnotationIdForTesting: UUID? { selectedAnnotationId }
+    var _isEditingTextForTesting: Bool { inlineTextField != nil }
+    func _undoForTesting() { performUndo() }
+    /// Stands in for picking a colour in the open colour panel.
+    func _pickColorForTesting(_ color: NSColor) {
+        let panel = NSColorPanel.shared
+        panel.color = color
+        colorChanged(panel)
+    }
     func _applyContextBarSliderForTesting(_ control: AnnotationContextBar.Control, value: CGFloat) {
         applyContextBarSlider(control, value: value)
     }
@@ -3840,6 +3919,11 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
     func _commitGridSizeForTesting(_ typed: String, commit: Bool = true) {
         gridSizeField?.stringValue = typed
         finishGridSizeEdit(commit: commit)
+    }
+    /// Test hook: what this view's app-wide local key monitor does with `event`.
+    /// True means the monitor swallows it, so no window ever sees the key.
+    func _keyMonitorConsumesForTesting(_ event: NSEvent) -> Bool {
+        consumesMonitoredKeyEvent(event)
     }
 
     /// Drives the numbered-badge size slider action (secondary-bar size control).

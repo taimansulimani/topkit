@@ -38,3 +38,5 @@ The lane runs **automated** checks (diff stats, blocked paths, high-confidence s
 ## 3. What "fire" does (mechanical)
 
 Tests → commit + push **only if** there are uncommitted changes → App Store Connect upload (sandboxed). Testing happens on TestFlight; the standalone `package_local` lane still exists if a local Release `.app` is ever needed.
+
+Fire is TestFlight only. It never submits to the App Store: that is the `release` lane, run only on his explicit yes for that version (see `topkit-release-flow`).
