@@ -23,6 +23,14 @@ private final class TooltipSpy: HoverTooltipPresenting {
     }
 }
 
+private final class HitTestCountingView: NSView {
+    var hitTests = 0
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        hitTests += 1
+        return super.hitTest(point)
+    }
+}
+
 final class ClipboardMenuItemTests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -313,6 +321,133 @@ final class ClipboardMenuItemTests: XCTestCase {
             appDelegate.buildMenu(into: menu)
             XCTAssertGreaterThan(menu.items.count, 0)
         }
+    }
+
+    // MARK: - Search with a big history (TEC-354)
+
+    /// Builds the status-style menu over `history` and returns it with its search view.
+    private func makeSearchableMenu(history: [ClipboardItem]) -> (AppDelegate, NSMenu, ClipboardSearchMenuView) {
+        let defaults = UserDefaults.standard
+        defaults.set(10, forKey: "itemsInline")
+        defaults.set(50, forKey: "itemsInFolder")
+        defaults.set(false, forKey: "showImagePreview")
+        let appDelegate = AppDelegate()
+        let manager = ClipboardManager.shared
+        let saved = manager.clipboardHistory
+        // The search callbacks hold the app delegate weakly; keep it alive for the test.
+        addTeardownBlock { manager.clipboardHistory = saved; _ = appDelegate }
+        manager.clipboardHistory = history
+        appDelegate.clipboardManager = manager
+        let menu = NSMenu()
+        appDelegate.buildMenu(into: menu)
+        let search = menu.item(at: 0)?.view as! ClipboardSearchMenuView
+        return (appDelegate, menu, search)
+    }
+
+    /// The clipboard section: everything between the search field and the first separator.
+    private func sectionItems(of menu: NSMenu) -> [NSMenuItem] {
+        Array(menu.items.dropFirst().prefix { !$0.isSeparatorItem })
+    }
+
+    private func spinRunLoop() {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+    }
+
+    func testSearchShowsEveryMatchInRankedOrderOnceTheFillCompletes() {
+        let history = (0..<130).map { ClipboardItem(content: $0 % 3 == 0 ? "carrot \($0)" : "car \($0)", type: .text) }
+        let (_, menu, search) = makeSearchableMenu(history: history)
+
+        search.onQueryChanged?("car")
+        // A screenful first, so the keystroke doesn't wait on every row…
+        XCTAssertLessThan(sectionItems(of: menu).count, 130)
+        XCTAssertGreaterThan(sectionItems(of: menu).count, 0)
+
+        // …then the rest, giving exactly what the filter ranks.
+        spinRunLoop()
+        let expected = ClipboardSearchFilter.matches(history: history, query: "car").map { history[$0.historyIndex].id }
+        let shown = sectionItems(of: menu).compactMap { ($0.representedObject as? ClipboardItem)?.id }
+        XCTAssertEqual(shown, expected)
+        XCTAssertEqual(sectionItems(of: menu).map(\.tag), ClipboardSearchFilter.matches(history: history, query: "car").map { $0.historyIndex + 1 })
+    }
+
+    func testNextKeystrokeReusesTheRowsThatStillMatch() {
+        let history = (0..<30).map { ClipboardItem(content: $0 % 2 == 0 ? "carrot \($0)" : "car \($0)", type: .text) }
+        let (_, menu, search) = makeSearchableMenu(history: history)
+
+        search.onQueryChanged?("car")
+        spinRunLoop()
+        let before = Dictionary(uniqueKeysWithValues: sectionItems(of: menu).map {
+            (($0.representedObject as! ClipboardItem).id, ObjectIdentifier($0))
+        })
+
+        search.onQueryChanged?("carr")
+        spinRunLoop()
+        let after = sectionItems(of: menu)
+        XCTAssertEqual(after.count, 15)
+        for row in after {
+            XCTAssertEqual(before[(row.representedObject as! ClipboardItem).id], ObjectIdentifier(row),
+                           "a row that still matches must be the same menu item, not a rebuilt one")
+        }
+    }
+
+    func testNoMatchesThenClearingRestoresTheNormalLayout() {
+        let history = (0..<25).map { ClipboardItem(content: "entry \($0)", type: .text) }
+        let (_, menu, search) = makeSearchableMenu(history: history)
+        let normalTitles = sectionItems(of: menu).map(\.title)
+
+        search.onQueryChanged?("zzz")
+        XCTAssertEqual(sectionItems(of: menu).map(\.title), ["No matches"])
+
+        search.onQueryChanged?("")
+        XCTAssertEqual(sectionItems(of: menu).map(\.title), normalTitles)
+        XCTAssertEqual(menu.items.first(where: { $0.title == "11 - 25" })?.submenu != nil, true)
+    }
+
+    /// The pin button is the costly part of a row, so it is only built once
+    /// the row is pinned or hovered.
+    func testPinButtonIsBuiltOnlyWhenTheRowNeedsIt() {
+        _ = NSApplication.shared
+        let (window, rows) = makeStackedRowsInWindow(count: 2)
+        defer { window.close() }
+        let row = rows[0]
+        row._recomputeHoverForTesting(atScreenPoint: NSPoint(x: -10_000, y: -10_000))
+        func pinButtons(_ view: NSView) -> [NSButton] { view.subviews.compactMap { $0 as? NSButton } }
+        XCTAssertTrue(pinButtons(row).isEmpty)
+
+        let onRow = NSPoint(x: window.frame.minX + 100, y: window.frame.minY + row.frame.midY)
+        row._recomputeHoverForTesting(atScreenPoint: onRow)
+        XCTAssertEqual(pinButtons(row).count, 1)
+        XCTAssertEqual(pinButtons(row).first?.isHidden, false)
+
+        let pinned = ClipboardRowMenuView()
+        pinned.configure(title: "kept", image: nil, isPinned: true, toolTip: nil, tooltipImageProvider: nil)
+        XCTAssertEqual(pinButtons(pinned).first?.isHidden, false)
+        XCTAssertEqual(pinButtons(pinned).first?.toolTip, String(localized: "Unpin Item"))
+    }
+
+    /// Every row re-derives hover on any geometry change; only the row under
+    /// the pointer may pay for a window hit-test, or a tall menu does rows² work.
+    func testOnlyTheRowUnderThePointerHitTestsTheWindow() {
+        _ = NSApplication.shared
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 300),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let container = HitTestCountingView(frame: NSRect(x: 0, y: 0, width: 300, height: 300))
+        window.contentView = container
+        let rows: [ClipboardRowMenuView] = (0..<10).map { index in
+            let row = ClipboardRowMenuView()
+            row.configure(title: "row \(index)", image: nil, isPinned: false, toolTip: nil, tooltipImageProvider: nil)
+            row.frame = NSRect(x: 0, y: CGFloat(index * 22), width: 300, height: 22)
+            container.addSubview(row)
+            return row
+        }
+
+        container.hitTests = 0
+        let onRow3 = NSPoint(x: window.frame.minX + 100, y: window.frame.minY + rows[3].frame.midY)
+        rows.forEach { $0._recomputeHoverForTesting(atScreenPoint: onRow3) }
+        XCTAssertLessThanOrEqual(container.hitTests, 1, "rows the pointer isn't over must not hit-test")
+        XCTAssertEqual(rows.map(\._isHoveredForTesting), (0..<10).map { $0 == 3 })
     }
 
     private func makeTestPNGData(width: Int, height: Int) -> Data {

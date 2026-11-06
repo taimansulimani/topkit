@@ -88,6 +88,31 @@ final class ClipboardSearchFilterTests: XCTestCase {
         XCTAssertTrue(ClipboardSearchFilter.matches(history: history, query: "99").isEmpty)
     }
 
+    // MARK: - Shared index (TEC-354)
+
+    func testSharedIndexGivesTheSameMatchesKeystrokeAfterKeystroke() {
+        let history = [text("select * from items"), image(), text("Selector"), file(["/Users/tr/sel.txt"]), text("nothing")]
+        let index = ClipboardSearchFilter.Index()
+        for query in ["s", "se", "sel", "Sel", "img", "1", "zz", "sel"] {
+            XCTAssertEqual(
+                ClipboardSearchFilter.matches(history: history, query: query, index: index),
+                ClipboardSearchFilter.matches(history: history, query: query),
+                query
+            )
+        }
+    }
+
+    func testSharedIndexForgetsItemsThatLeftHistory() {
+        let kept = text("alpha")
+        let index = ClipboardSearchFilter.Index()
+        _ = ClipboardSearchFilter.matches(history: [kept, text("beta"), text("gamma")], query: "a", index: index)
+        XCTAssertEqual(index._preparedCountForTesting, 3)
+
+        let matches = ClipboardSearchFilter.matches(history: [text("delta"), kept], query: "a", index: index)
+        XCTAssertEqual(index._preparedCountForTesting, 2)
+        XCTAssertEqual(matches.map(\.historyIndex), [1, 0])
+    }
+
     func testOrdinalZeroIsNotValid() {
         let history = [text("0 degrees"), text("bbb")]
         let matches = ClipboardSearchFilter.matches(history: history, query: "0")

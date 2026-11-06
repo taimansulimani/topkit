@@ -61,12 +61,13 @@ final class PermissionManager {
             self?.log("🔑 Requesting screen recording permission")
             // Become a regular foreground app first so the system TCC dialog appears in
             // front and focused — accessory (menu-bar) apps otherwise get it behind.
-            self?.bringAppToForegroundForPrompt()
-            // Show ONLY the native TCC dialog. Its own "Open System Settings" button hands
-            // off to the pane; opening System Settings ourselves stacked a second window on
-            // top of the dialog. On a mid-session revoke the OS won't re-show the dialog and
-            // nothing appears — accepted in exchange for the clean single-dialog flow.
-            _ = CGRequestScreenCaptureAccess()
+            self?.bringAppToForegroundForPrompt {
+                // Show ONLY the native TCC dialog. Its own "Open System Settings" button hands
+                // off to the pane; opening System Settings ourselves stacked a second window on
+                // top of the dialog. On a mid-session revoke the OS won't re-show the dialog and
+                // nothing appears — accepted in exchange for the clean single-dialog flow.
+                _ = CGRequestScreenCaptureAccess()
+            }
 
             var pollTimer: Timer?
             var activationObserver: NSObjectProtocol?
@@ -121,11 +122,12 @@ final class PermissionManager {
         case .authorized:
             DispatchQueue.main.async { completion(true) }
         case .notDetermined:
-            bringAppToForegroundForPrompt()
-            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-                DispatchQueue.main.async {
-                    self?.restoreActivationPolicyAfterPrompt()
-                    completion(granted)
+            bringAppToForegroundForPrompt { [weak self] in
+                AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+                    DispatchQueue.main.async {
+                        self?.restoreActivationPolicyAfterPrompt()
+                        completion(granted)
+                    }
                 }
             }
         default:
@@ -141,11 +143,12 @@ final class PermissionManager {
         case .authorized:
             DispatchQueue.main.async { completion(true) }
         case .notDetermined:
-            bringAppToForegroundForPrompt()
-            SFSpeechRecognizer.requestAuthorization { [weak self] status in
-                DispatchQueue.main.async {
-                    self?.restoreActivationPolicyAfterPrompt()
-                    completion(status == .authorized)
+            bringAppToForegroundForPrompt { [weak self] in
+                SFSpeechRecognizer.requestAuthorization { [weak self] status in
+                    DispatchQueue.main.async {
+                        self?.restoreActivationPolicyAfterPrompt()
+                        completion(status == .authorized)
+                    }
                 }
             }
         default:
@@ -156,14 +159,16 @@ final class PermissionManager {
     /// Activation policy captured before a prompt forced us to `.regular`, so we can revert.
     private var activationPolicyBeforePrompt: NSApplication.ActivationPolicy?
 
-    /// Make the app a regular foreground app and activate it so a system permission dialog
-    /// is presented in front and focused. No-op if we're already regular.
-    private func bringAppToForegroundForPrompt() {
+    /// Make the app a regular foreground app, activate it, and run `present` (the system
+    /// permission request) only once the app is actually active, so the dialog is presented in
+    /// front and focused. Requesting in the same run-loop turn as `activate` opened it while the
+    /// previous app still had focus. Policy change is skipped if we're already regular.
+    private func bringAppToForegroundForPrompt(then present: @escaping () -> Void) {
         if NSApp.activationPolicy() != .regular {
             activationPolicyBeforePrompt = NSApp.activationPolicy()
             NSApp.setActivationPolicy(.regular)
         }
-        NSApp.activate(ignoringOtherApps: true)
+        AppActivation.activateThen(present)
     }
 
     /// Revert the activation policy changed by `bringAppToForegroundForPrompt`.
@@ -242,25 +247,26 @@ final class PermissionManager {
 
             let everRequested = UserDefaults.standard.bool(forKey: Self.postEventEverRequestedKey)
             self.log("🔑 Requesting PostEvent (Accessibility) permission (everRequested=\(everRequested))")
-            self.bringAppToForegroundForPrompt()
-
-            if !everRequested {
-                UserDefaults.standard.set(true, forKey: Self.postEventEverRequestedKey)
-                // First ask: this shows the native dialog when the decision is still undetermined.
-                // Don't also open System Settings — that stacks a second window on the dialog.
-                if CGRequestPostEventAccess() {
-                    self.restoreActivationPolicyAfterPrompt()
-                    return
+            self.bringAppToForegroundForPrompt { [weak self] in
+                guard let self = self else { return }
+                if !everRequested {
+                    UserDefaults.standard.set(true, forKey: Self.postEventEverRequestedKey)
+                    // First ask: this shows the native dialog when the decision is still undetermined.
+                    // Don't also open System Settings — that stacks a second window on the dialog.
+                    if CGRequestPostEventAccess() {
+                        self.restoreActivationPolicyAfterPrompt()
+                        return
+                    }
+                } else {
+                    // A decision already exists (typically a prior grant that was later revoked), so
+                    // the OS won't re-show its dialog. Send the user straight to the right pane.
+                    self.openAccessibilitySettings()
                 }
-            } else {
-                // A decision already exists (typically a prior grant that was later revoked), so
-                // the OS won't re-show its dialog. Send the user straight to the right pane.
-                self.openAccessibilitySettings()
-            }
 
-            // Restore the menu-bar activation policy once the dialog / Settings has been presented.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.restoreActivationPolicyAfterPrompt()
+                // Restore the menu-bar activation policy once the dialog / Settings has been presented.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    self?.restoreActivationPolicyAfterPrompt()
+                }
             }
         }
     }

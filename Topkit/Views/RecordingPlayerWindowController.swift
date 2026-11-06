@@ -1,6 +1,7 @@
 import AppKit
 import AVKit
 import AVFoundation
+import Carbon.HIToolbox
 
 /// Player + trimmer for recordings Topkit just made. Not a general video
 /// player: it only ever opens files produced by ScreenRecordingManager.
@@ -12,6 +13,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
     private let playerView = AVPlayerView()
     private var trimButton: NSButton?
     private var renameButton: NSButton?
+    private var deleteButton: NSButton?
     private var keyMonitor: Any?
     private var onClose: (() -> Void)?
 
@@ -55,26 +57,48 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
             trim.imagePosition = .imageLeading
         }
 
+        // Delete (⌘⌫) discards the recording. Destructive, so it sits last,
+        // set apart from Rename/Trim by a wider gap.
+        let delete = NSButton(title: String(localized: "Delete"), target: self, action: #selector(deleteTapped))
+        delete.bezelStyle = .toolbar
+        if let bin = NSImage(systemSymbolName: "trash", accessibilityDescription: "Delete") {
+            delete.image = bin
+            delete.imagePosition = .imageLeading
+        }
+
         let renameWidth = rename.fittingSize.width + 8
         let trimWidth = trim.fittingSize.width + 8
+        let deleteWidth = delete.fittingSize.width + 8
         let gap: CGFloat = 8
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: renameWidth + gap + trimWidth + 16, height: 28))
+        let destructiveGap: CGFloat = 16
+        let container = NSView(frame: NSRect(
+            x: 0, y: 0,
+            width: renameWidth + gap + trimWidth + destructiveGap + deleteWidth + 16,
+            height: 28
+        ))
         rename.frame = NSRect(x: 0, y: 3, width: renameWidth, height: 22)
         trim.frame = NSRect(x: renameWidth + gap, y: 3, width: trimWidth, height: 22)
+        delete.frame = NSRect(x: renameWidth + gap + trimWidth + destructiveGap, y: 3, width: deleteWidth, height: 22)
         container.addSubview(rename)
         container.addSubview(trim)
+        container.addSubview(delete)
         accessory.view = container
         accessory.layoutAttribute = .trailing
         window.addTitlebarAccessoryViewController(accessory)
         trimButton = trim
         renameButton = rename
+        deleteButton = delete
 
-        // ⌘T (trim) / ⌘W (close) while this window is key — an accessory app
-        // has no main menu, so the standard Close equivalent must be manual,
-        // same as the preferences window.
+        // ⌘T (trim) / ⌘R (rename) / ⌘⌫ (delete) / ⌘W (close) while this window
+        // is key — an accessory app has no main menu, so the standard Close
+        // equivalent must be manual, same as the preferences window.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, self.window?.isKeyWindow == true,
                   event.modifierFlags.contains(.command) else { return event }
+            if event.keyCode == UInt16(kVK_Delete) {
+                self.deleteTapped()
+                return nil
+            }
             switch event.charactersIgnoringModifiers {
             case "t":
                 self.trimTapped()
@@ -107,6 +131,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
     @objc private func trimTapped() {
         guard playerView.canBeginTrimming else { return }
         trimButton?.isEnabled = false
+        deleteButton?.isEnabled = false
         playerView.beginTrimming { [weak self] result in
             DispatchQueue.main.async {
                 guard let self else { return }
@@ -129,6 +154,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
     /// whole (current) file again.
     private func resetTrimState() {
         trimButton?.isEnabled = true
+        deleteButton?.isEnabled = true
         if let item = playerView.player?.currentItem {
             item.reversePlaybackEndTime = .invalid
             item.forwardPlaybackEndTime = .invalid
@@ -231,6 +257,49 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
         if wasPlaying { player.play() }
         window?.title = newURL.lastPathComponent
         ToastPresenter.shared.show(message: String(localized: "Recording renamed"))
+    }
+
+    // MARK: - Delete
+
+    @objc private func deleteTapped() {
+        // Not while a trim is open or exporting: the export still reads the
+        // file and would write a temp file nobody cleans up.
+        guard let window, window.attachedSheet == nil, deleteButton?.isEnabled == true else { return }
+        let name = fileURL.lastPathComponent
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Delete Recording")
+        switch RecordingDestination.discardMethod(for: fileURL) {
+        case .moveToTrash:
+            alert.informativeText = String(localized: "“\(name)” will be moved to the Trash.")
+        case .removeTemporaryFile:
+            alert.informativeText = String(localized: "“\(name)” will be deleted. This cannot be undone.")
+        }
+        // Same order as Clear Clipboard History: Cancel left, destructive right.
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        alert.addButton(withTitle: String(localized: "Delete"))
+        alert.buttons.last?.hasDestructiveAction = true
+
+        alert.beginSheetModal(for: window) { [weak self] response in
+            guard let self, response == .alertSecondButtonReturn else { return }
+            self.performDelete()
+        }
+    }
+
+    private func performDelete() {
+        // Release the file before it moves, mirroring rename/trim.
+        playerView.player?.pause()
+        playerView.player?.replaceCurrentItem(with: nil)
+
+        guard let method = RecordingDestination.discardRecording(at: fileURL) else {
+            playerView.player = AVPlayer(url: fileURL)
+            ToastPresenter.shared.show(message: String(localized: "Delete failed"), force: true)
+            return
+        }
+        ToastPresenter.shared.show(message: method == .moveToTrash
+            ? String(localized: "Recording moved to Trash")
+            : String(localized: "Recording deleted"))
+        // windowWillClose drops the player, the key monitor and the folder scope.
+        window?.close()
     }
 
     // MARK: - NSWindowDelegate

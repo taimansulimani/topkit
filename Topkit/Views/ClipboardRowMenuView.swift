@@ -76,13 +76,26 @@ final class ClipboardRowMenuView: NSView {
         return field
     }()
 
-    private let pinButton: NSButton = {
-        let button = NSButton(title: "", target: nil, action: nil)
-        button.isBordered = false
-        button.imagePosition = .imageOnly
-        button.setButtonType(.momentaryPushIn)
-        return button
-    }()
+    /// Created the first time it has to show (pinned, hovered or keyboard
+    /// highlighted). An NSButton is the most expensive part of a row to build
+    /// (about 1 ms), and a search can put hundreds of rows into the menu,
+    /// almost none of which ever get hovered (TEC-354). Hidden buttons are not
+    /// in the accessibility tree either, so building it late changes nothing.
+    private var pinButton: NSButton?
+
+    /// Shared by every row: looking a symbol up and configuring it per row
+    /// showed up in search profiling.
+    private static let pinSymbol = pinSymbolImage(pinned: false)
+    private static let pinnedSymbol = pinSymbolImage(pinned: true)
+    private static let pinLabel = String(localized: "Pin Item")
+    private static let unpinLabel = String(localized: "Unpin Item")
+
+    private static func pinSymbolImage(pinned: Bool) -> NSImage? {
+        NSImage(
+            systemSymbolName: pinned ? "pin.fill" : "pin",
+            accessibilityDescription: pinned ? unpinLabel : pinLabel
+        )?.withSymbolConfiguration(.init(pointSize: 12, weight: .medium))
+    }
 
     private var mouseInside = false {
         didSet {
@@ -112,9 +125,6 @@ final class ClipboardRowMenuView: NSView {
         addSubview(highlightView)
         addSubview(iconView)
         addSubview(titleField)
-        addSubview(pinButton)
-        pinButton.target = self
-        pinButton.action = #selector(pinButtonClicked)
     }
 
     @available(*, unavailable)
@@ -137,12 +147,7 @@ final class ClipboardRowMenuView: NSView {
         self.toolTip = toolTip
         self.tooltipImageProvider = tooltipImageProvider
 
-        let symbolName = isPinned ? "pin.fill" : "pin"
-        let label = isPinned ? String(localized: "Unpin Item") : String(localized: "Pin Item")
-        pinButton.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: label)?
-            .withSymbolConfiguration(.init(pointSize: 12, weight: .medium))
-        pinButton.toolTip = label
-        pinButton.setAccessibilityLabel(label)
+        if let pinButton { applyPinState(to: pinButton) }
         setAccessibilityElement(true)
         setAccessibilityRole(.menuItem)
         setAccessibilityLabel(isPinned ? "\(title), \(String(localized: "Pinned"))" : title)
@@ -168,6 +173,35 @@ final class ClipboardRowMenuView: NSView {
         return NSSize(width: max(width, Self.minWidth), height: height)
     }
 
+    private var pinButtonFrame: NSRect {
+        NSRect(
+            x: bounds.width - Self.contentTrailing - Self.pinButtonSize,
+            y: (bounds.height - Self.pinButtonSize) / 2,
+            width: Self.pinButtonSize,
+            height: Self.pinButtonSize
+        )
+    }
+
+    private func makePinButton() -> NSButton {
+        let button = NSButton(title: "", target: nil, action: nil)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.setButtonType(.momentaryPushIn)
+        button.target = self
+        button.action = #selector(pinButtonClicked)
+        button.frame = pinButtonFrame
+        applyPinState(to: button)
+        addSubview(button)
+        return button
+    }
+
+    private func applyPinState(to button: NSButton) {
+        let label = isPinned ? Self.unpinLabel : Self.pinLabel
+        button.image = isPinned ? Self.pinnedSymbol : Self.pinSymbol
+        button.toolTip = label
+        button.setAccessibilityLabel(label)
+    }
+
     override func layout() {
         super.layout()
         highlightView.frame = bounds.insetBy(dx: Self.highlightInset, dy: 0)
@@ -189,12 +223,7 @@ final class ClipboardRowMenuView: NSView {
         }
 
         let pinX = bounds.width - Self.contentTrailing - Self.pinButtonSize
-        pinButton.frame = NSRect(
-            x: pinX,
-            y: (bounds.height - Self.pinButtonSize) / 2,
-            width: Self.pinButtonSize,
-            height: Self.pinButtonSize
-        )
+        pinButton?.frame = pinButtonFrame
 
         let titleHeight = titleField.intrinsicContentSize.height
         titleField.frame = NSRect(
@@ -293,9 +322,20 @@ final class ClipboardRowMenuView: NSView {
     /// Hit-test rather than a plain bounds check: rows scrolled under the menu's
     /// scroll arrows are still inside their own bounds, and only the row the pointer
     /// genuinely lands on may light up.
+    ///
+    /// Every row runs this whenever any shared ancestor moves or resizes, and
+    /// a full-window hit-test walks every row, so with the pointer over the
+    /// menu that was rows² work per geometry change (TEC-354). A point outside
+    /// this row's own frame can never hit-test into it, so those rows answer
+    /// without the walk (the rect is padded a point because hit-testing
+    /// includes edges that NSRect.contains leaves out).
     private func recomputeHoverFromPointer(screenPoint: NSPoint = NSEvent.mouseLocation) {
         guard let window else { return }
         let pointInWindow = window.convertPoint(fromScreen: screenPoint)
+        guard bounds.insetBy(dx: -1, dy: -1).contains(convert(pointInWindow, from: nil)) else {
+            mouseInside = false
+            return
+        }
         let inside: Bool
         if let hit = window.contentView?.hitTest(pointInWindow) {
             inside = hit.isDescendant(of: self)
@@ -379,7 +419,12 @@ final class ClipboardRowMenuView: NSView {
     private func updateAppearance() {
         highlightView.isHidden = !isHighlighted
         titleField.textColor = isHighlighted ? .selectedMenuItemTextColor : .labelColor
-        pinButton.isHidden = !(isPinned || isHighlighted)
+        let showsPinButton = isPinned || isHighlighted
+        if showsPinButton, pinButton == nil {
+            pinButton = makePinButton()
+        }
+        guard let pinButton else { return }
+        pinButton.isHidden = !showsPinButton
         pinButton.contentTintColor = isHighlighted
             ? .selectedMenuItemTextColor
             : (isPinned ? .labelColor : .secondaryLabelColor)

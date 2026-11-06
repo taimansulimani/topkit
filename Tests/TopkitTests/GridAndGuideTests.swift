@@ -369,4 +369,173 @@ final class GridAndGuideTests: XCTestCase {
         XCTAssertEqual(spanned.midX, 41, accuracy: 0.5)
         XCTAssertEqual(spanned.minY, -20, accuracy: 0.5)
     }
+
+    // MARK: - Multiple monitors (TEC-286)
+
+    /// One Annotate overlay per display, as the manager builds them. The field is
+    /// opened before attaching so the test never runs the real focus dance (which
+    /// activates the app).
+    private func twoScreenOverlays(fieldOnSecond mark: Annotation)
+        -> (first: ScreenshotAnnotationView, firstWindow: NSWindow,
+            second: ScreenshotAnnotationView, secondWindow: NSWindow) {
+        twoScreenOverlays { second in
+            second._setAnnotationsForTesting([mark])
+            second._beginGridSizeEditForTesting(mark.id, label: .width)
+        }
+    }
+
+    private func twoScreenOverlays(prepareSecond: (ScreenshotAnnotationView) -> Void)
+        -> (first: ScreenshotAnnotationView, firstWindow: NSWindow,
+            second: ScreenshotAnnotationView, secondWindow: NSWindow) {
+        _ = NSApplication.shared
+        func window(at x: CGFloat) -> NSWindow {
+            let w = LiveAnnotationOverlayWindow(
+                contentRect: NSRect(x: x, y: 0, width: 400, height: 400),
+                styleMask: [.borderless], backing: .buffered, defer: false
+            )
+            w.isReleasedWhenClosed = false
+            return w
+        }
+        let first = overlayView()
+        let second = overlayView()
+        prepareSecond(second)
+
+        let firstWindow = window(at: 0)
+        let secondWindow = window(at: 400)
+        firstWindow.contentView = first
+        secondWindow.contentView = second
+        return (first, firstWindow, second, secondWindow)
+    }
+
+    private func keyDown(_ keyCode: UInt16, _ characters: String,
+                         modifiers: NSEvent.ModifierFlags = [], in window: NSWindow) -> NSEvent {
+        NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: modifiers, timestamp: 0,
+            windowNumber: window.windowNumber, context: nil,
+            characters: characters, charactersIgnoringModifiers: characters,
+            isARepeat: false, keyCode: keyCode
+        )!
+    }
+
+    /// Local key monitors are app-wide, so the overlay on the other display saw every
+    /// key typed into the dimension field. It took Return as "save" and swallowed it,
+    /// so the typed size never committed; Delete and ⌘Z/⌘C/⌘V hit its own marks.
+    func testKeysTypedIntoADimensionFieldOnOneDisplayAreNotTakenByTheOtherDisplay() {
+        let mark = grid(NSRect(x: 40, y: 40, width: 200, height: 120))
+        let s = twoScreenOverlays(fieldOnSecond: mark)
+        defer {
+            s.second._commitGridSizeForTesting("", commit: false)
+            s.firstWindow.contentView = nil
+            s.secondWindow.contentView = nil
+        }
+
+        // Something selected on the first display, as there usually is.
+        let other = grid(NSRect(x: 10, y: 10, width: 80, height: 80))
+        s.first._setAnnotationsForTesting([other])
+        s.first._selectForTesting(other.id)
+
+        let keys: [(name: String, event: NSEvent)] = [
+            ("digit", keyDown(23, "5", in: s.secondWindow)),
+            ("Return", keyDown(36, "\r", in: s.secondWindow)),
+            ("Delete", keyDown(51, "\u{7f}", in: s.secondWindow)),
+            ("⌘Z", keyDown(6, "z", modifiers: .command, in: s.secondWindow)),
+            ("⌘C", keyDown(8, "c", modifiers: .command, in: s.secondWindow)),
+            ("⌘V", keyDown(9, "v", modifiers: .command, in: s.secondWindow)),
+        ]
+        for key in keys {
+            XCTAssertTrue(key.event.window === s.secondWindow, "\(key.name) should target the field's display")
+            XCTAssertFalse(s.first._keyMonitorConsumesForTesting(key.event),
+                           "the other display's overlay must not swallow \(key.name)")
+            XCTAssertFalse(s.second._keyMonitorConsumesForTesting(key.event),
+                           "the field's own overlay must leave \(key.name) to the field editor")
+        }
+        XCTAssertEqual(s.first._annotationsForTesting().map(\.id), [other.id],
+                       "typing in the field must not delete or undo marks on the other display")
+        XCTAssertTrue(s.second._isEditingGridSizeForTesting, "the field is still open")
+    }
+
+    /// The fix is scoped to keys aimed at another overlay: a key for this overlay's
+    /// own window still runs its shortcuts.
+    func testAnOverlayStillHandlesKeysForItsOwnDisplay() {
+        let mark = grid(NSRect(x: 40, y: 40, width: 200, height: 120))
+        let s = twoScreenOverlays(fieldOnSecond: mark)
+        defer {
+            s.second._commitGridSizeForTesting("", commit: false)
+            s.firstWindow.contentView = nil
+            s.secondWindow.contentView = nil
+        }
+        let own = grid(NSRect(x: 10, y: 10, width: 80, height: 80))
+        s.first._setAnnotationsForTesting([own])
+        s.first._selectForTesting(own.id)
+
+        let delete = keyDown(51, "\u{7f}", in: s.firstWindow)
+        XCTAssertTrue(s.first._keyMonitorConsumesForTesting(delete),
+                      "Delete on the overlay's own display deletes its selection")
+        XCTAssertTrue(s.first._annotationsForTesting().isEmpty)
+    }
+
+    /// Same root cause, other field: a text mark being typed on the second display lost
+    /// Return (a new line) and Delete to the first display's overlay.
+    func testKeysTypedIntoATextMarkOnOneDisplayAreNotTakenByTheOtherDisplay() {
+        let s = twoScreenOverlays { second in
+            second.setArmedTool(.text)
+            second.handlePointerDown(at: NSPoint(x: 200, y: 200), clickCount: 1)
+        }
+        defer {
+            s.firstWindow.contentView = nil
+            s.secondWindow.contentView = nil
+        }
+        XCTAssertTrue(s.second.subviews.contains { $0 is EditableTextField },
+                      "precondition: a text field is open on the second display")
+        let other = grid(NSRect(x: 10, y: 10, width: 80, height: 80))
+        s.first._setAnnotationsForTesting([other])
+        s.first._selectForTesting(other.id)
+
+        for event in [keyDown(36, "\r", in: s.secondWindow),
+                      keyDown(51, "\u{7f}", in: s.secondWindow)] {
+            XCTAssertFalse(s.first._keyMonitorConsumesForTesting(event),
+                           "the other display's overlay must leave the text field's keys alone")
+        }
+        XCTAssertEqual(s.first._annotationsForTesting().map(\.id), [other.id])
+    }
+
+    /// Screenshot flow, selection spanning two displays: a grid on the display that
+    /// does not host the editor window is clicked through a mirror overlay. The field
+    /// used to open in the editor window outside its bounds, so nothing typed showed.
+    /// Like the text tool, it must first move the editor window to that display.
+    func testAGridLabelOnTheOtherDisplayMovesTheEditorThereBeforeOpeningTheField() {
+        let view = ScreenshotAnnotationView(
+            frame: NSRect(x: 0, y: 0, width: 800, height: 600),
+            mode: .liveRegion,
+            screenshotRect: NSRect(x: 600, y: 100, width: 600, height: 300)
+        )
+        let hole = NSRect(x: 600, y: 100, width: 600, height: 300)
+        view._setSelectionRectForTesting(hole, freezeReferenceAt: hole)
+        // Annotation space x 300 is view x 900: past this display's right edge.
+        let mark = grid(NSRect(x: 300, y: 50, width: 200, height: 120))
+        view._setAnnotationsForTesting([mark])
+
+        var requested: NSPoint?
+        view.onRequestWindowMove = { [weak view] global in
+            requested = global
+            // What ScreenshotManager does: the display to the right becomes home.
+            let shift: CGFloat = 800
+            view?.relocateForScreenSwap(
+                newScreenshotRect: hole.offsetBy(dx: -shift, dy: 0),
+                newScreenOrigin: NSPoint(x: shift, y: 0),
+                newAllowedBounds: NSRect(x: -shift, y: 0, width: 1600, height: 600)
+            )
+        }
+
+        let label = AnnotationRenderer.gridLabelRects(for: mark.frame).width
+        let click = NSPoint(x: hole.minX + label.midX, y: hole.maxY - label.midY)
+        XCTAssertFalse(view.bounds.contains(click), "precondition: the label is on the other display")
+        view.handlePointerDown(at: click, clickCount: 1)
+        defer { view._commitGridSizeForTesting("", commit: false) }
+
+        XCTAssertEqual(requested, click, "the editor should move to the display that was clicked")
+        guard let field = view._gridSizeFieldForTesting else { return XCTFail("no field opened") }
+        XCTAssertTrue(view.bounds.contains(field.frame),
+                      "the field must sit inside the editor window, where it can be seen")
+    }
 }

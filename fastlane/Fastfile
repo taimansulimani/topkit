@@ -43,7 +43,7 @@ platform :mac do
       "-derivedDataPath /tmp/TopkitLocalPackageDerivedData build"
     )
 
-    src = File.join("/tmp/TopkitLocalPackageDerivedData/Build/Products/Release/Topkit.app")
+    src = File.join("/tmp/TopkitLocalPackageDerivedData/Build/Products/Release/Topkit Dev.app")
     dst = File.expand_path("~/Desktop/Topkit-local.app")
 
     sh("rm -rf '#{dst}'")

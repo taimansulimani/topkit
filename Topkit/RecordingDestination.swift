@@ -45,14 +45,16 @@ enum RecordingDestination {
         panel.title = String(localized: "Choose Recording Save Folder")
         panel.message = String(localized: "Topkit needs one-time permission to save screen recordings here. Desktop is the default — click Grant Access, or pick another folder.")
         panel.prompt = String(localized: "Grant Access")
-        NSApp.activate(ignoringOtherApps: true)
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else {
-                completion(false)
-                return
+        // Show the panel only once Topkit is active, so it opens frontmost and key.
+        AppActivation.activateThen {
+            panel.begin { response in
+                guard response == .OK, let url = panel.url else {
+                    completion(false)
+                    return
+                }
+                store(folderURL: url)
+                completion(true)
             }
-            store(folderURL: url)
-            completion(true)
         }
     }
 
@@ -170,5 +172,58 @@ enum RecordingDestination {
             try FileManager.default.replaceItemAt(originalURL, withItemAt: newContentURL) ?? originalURL
         }
         return replaced ?? nil
+    }
+
+    // MARK: - Delete
+
+    /// How Delete in the player gets rid of a recording.
+    enum DiscardMethod: Equatable {
+        /// Topkit's own scratch file (staging / trim temp inside the app's
+        /// temporary directory): nobody else knows it exists, remove it.
+        case removeTemporaryFile
+        /// Anything else (the auto-saved copy in the user's save folder):
+        /// never hard-delete, move it to the Trash so it can be put back.
+        case moveToTrash
+    }
+
+    /// True when `fileURL` sits inside `directory` (symlinks resolved, so
+    /// /var/folders and /private/var/folders compare equal).
+    static func isFile(_ fileURL: URL, inside directory: URL) -> Bool {
+        let file = fileURL.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        let dir = directory.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        return file.count > dir.count && Array(file.prefix(dir.count)) == dir
+    }
+
+    static func discardMethod(
+        for fileURL: URL,
+        temporaryDirectory: URL = FileManager.default.temporaryDirectory
+    ) -> DiscardMethod {
+        isFile(fileURL, inside: temporaryDirectory) ? .removeTemporaryFile : .moveToTrash
+    }
+
+    /// Delete from the player. Topkit's temp files are removed; every other
+    /// file goes to the Trash, never a hard delete. The caller must hold the
+    /// save folder's security scope (the player does for its whole lifetime).
+    /// Returns the method used, or nil on failure (the file is left untouched;
+    /// a failed Trash never falls back to removing the file).
+    @discardableResult
+    static func discardRecording(
+        at fileURL: URL,
+        temporaryDirectory: URL = FileManager.default.temporaryDirectory,
+        moveToTrash: (URL) throws -> Void = { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }
+    ) -> DiscardMethod? {
+        let method = discardMethod(for: fileURL, temporaryDirectory: temporaryDirectory)
+        do {
+            switch method {
+            case .removeTemporaryFile:
+                try FileManager.default.removeItem(at: fileURL)
+            case .moveToTrash:
+                try moveToTrash(fileURL)
+            }
+            return method
+        } catch {
+            debugLog("❌ Delete recording failed (\(method)): \(error.localizedDescription)")
+            return nil
+        }
     }
 }

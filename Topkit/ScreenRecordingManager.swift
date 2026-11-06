@@ -821,6 +821,12 @@ class ScreenRecordingManager: ObservableObject {
     private func setActivity(_ new: Activity) {
         let previous = activity
         activity = new
+        // Clipboard history stays out of the recording: an open clipboard menu closes
+        // when the flow starts, and one opened later shows for the user only (TEC-241).
+        ClipboardCaptureShield.shared.setActive(
+            ClipboardCaptureShield.isCaptureActive(recordingActivity: new),
+            for: .recording
+        )
         onRecordingStateChanged?(new)
         // Recording owns the global Esc hotkey; Annotate must drop/reclaim its own.
         if previous == .recording || new == .recording {

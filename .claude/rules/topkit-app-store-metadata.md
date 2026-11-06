@@ -7,15 +7,13 @@ description: App Store metadata URLs and upload safety — canonical topkitapp.c
 
 ## Canonical public URLs
 
-All App Store listing URLs in `fastlane/metadata/**` must be exactly:
+Every locale (`en-US`, `en-GB`, etc.) in `fastlane/metadata/**` uses exactly:
 
-`https://topkitapp.com/`
+- `marketing_url.txt`: `https://topkitapp.com/`
+- `support_url.txt`: `https://topkitapp.com/`
+- `privacy_url.txt`: `https://topkitapp.com/privacy/` (App Review wants the policy on its own page)
 
-This applies to every locale (`en-US`, `en-GB`, etc.) and every URL field:
-
-- `marketing_url.txt`
-- `support_url.txt`
-- `privacy_url.txt`
+`scripts/validate-app-store-metadata.sh` enforces these values.
 
 Never use `tommasorota.com`, `/work/topkit.html`, or any other domain/path in metadata.
 
@@ -23,7 +21,7 @@ Never use `tommasorota.com`, `/work/topkit.html`, or any other domain/path in me
 
 1. Run `scripts/validate-app-store-metadata.sh` (also runs in test gates and before Fastlane metadata upload).
 2. `upload_metadata` / `upload_store_listing` / `release` push **all** files under `fastlane/metadata/` — not just the file you edited. Stale repo values overwrite App Store Connect.
-3. If only one field changed (e.g. description spelling), still verify URL files in the repo match `https://topkitapp.com/` before running deliver.
+3. If only one field changed (e.g. description spelling), still verify the URL files in the repo match the values above before running deliver.
 
 ## Contact email vs app URLs
 

@@ -120,6 +120,7 @@ final class ClipboardSearchMenuView: NSView, NSSearchFieldDelegate {
     private static let verticalPadding: CGFloat = 3
 
     init(initialQuery: String) {
+        lastReportedQuery = initialQuery
         super.init(frame: NSRect(
             x: 0, y: 0,
             width: 250,
@@ -149,14 +150,26 @@ final class ClipboardSearchMenuView: NSView, NSSearchFieldDelegate {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
+    /// The query last handed to `onQueryChanged`. A typed character reaches
+    /// us twice — controlTextDidChange, then the search action
+    /// (sendsSearchStringImmediately) — and each call refilters the whole
+    /// history, so repeats of the same text are dropped (TEC-354).
+    private var lastReportedQuery: String
+
+    private func reportQuery(_ query: String) {
+        guard query != lastReportedQuery else { return }
+        lastReportedQuery = query
+        onQueryChanged?(query)
+    }
+
     @objc private func searchFieldAction(_ sender: NSSearchField) {
-        onQueryChanged?(sender.stringValue)
+        reportQuery(sender.stringValue)
     }
 
     // MARK: - NSSearchFieldDelegate
 
     func controlTextDidChange(_ obj: Notification) {
-        onQueryChanged?(searchField.stringValue)
+        reportQuery(searchField.stringValue)
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
@@ -169,7 +182,7 @@ final class ClipboardSearchMenuView: NSView, NSSearchFieldDelegate {
             // event falls through and the menu closes as usual.
             guard !searchField.stringValue.isEmpty else { return false }
             searchField.stringValue = ""
-            onQueryChanged?("")
+            reportQuery("")
             return true
         default:
             return false

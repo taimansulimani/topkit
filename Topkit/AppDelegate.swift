@@ -62,6 +62,21 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
     /// the search field at index 0 and whatever follows the section), so live
     /// refiltering can splice the section in place while the menu is open.
     private var clipboardSectionCounts: [ObjectIdentifier: Int] = [:]
+    /// Search-result rows built for each menu, keyed by history item, so the
+    /// next keystroke reuses them instead of building every row again (a row
+    /// view is the slow part of a search). Dropped on rebuild and close.
+    private var searchRowPools: [ObjectIdentifier: [UUID: NSMenuItem]] = [:]
+    /// Bumped per menu on every refilter, so a pending fill pass for an older
+    /// query stops.
+    private var searchFillGenerations: [ObjectIdentifier: Int] = [:]
+    /// Rows a search adds to the menu per run-loop pass: about a screenful, so
+    /// the first results show at once and the rest follow without holding up
+    /// the next keystroke.
+    private static let searchRowsPerPass = 40
+    /// Each history item's search text, prepared once per search rather than
+    /// per keystroke. Only kept while a menu is searching: it holds a few
+    /// bytes per character of history.
+    private var clipboardSearchIndex: ClipboardSearchFilter.Index?
     private var menuNeedsRebuild = true
     private var lastMenuBuildSignature: MenuBuildSignature?
     private let thumbnailCache = NSCache<NSString, NSImage>()
@@ -484,6 +499,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
             // stays open, and would cancel the tooltip of the row moved back onto.
             AnnotationTooltip.shared.hide(for: nil)
 
+            // Search state only pays off while typing: don't hold it while idle.
+            clipboardSearchIndex = nil
+            searchRowPools.removeValue(forKey: ObjectIdentifier(menu))
+
             // Return-close fallback (probe-verified): AppKit dismisses the menu
             // on Return WITHOUT firing a view-backed item's action, and no key
             // routing (monitors, first responder, key equivalents) reliably
@@ -636,9 +655,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         menu.addItem(makeSearchMenuItem(for: menu))
 
         // Clipboard History Section
-        let sectionItems = clipboardSectionItems(inlineCount: inlineCount, folderCount: folderCount)
-        sectionItems.forEach { menu.addItem($0) }
-        clipboardSectionCounts[ObjectIdentifier(menu)] = sectionItems.count
+        startClipboardSection(in: menu, inlineCount: inlineCount, folderCount: folderCount)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -772,10 +789,145 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         menu.addItem(NSMenuItem(title: "Quit Topkit", action: #selector(quit), keyEquivalent: ""))
     }
 
-    /// The clipboard rows for the current search query: the normal
-    /// inline + folder layout when the query is empty, or a flat list ranked
-    /// by fuzzy-match score when the user is searching (folders disappear and
-    /// the whole history is searched, not just the inline items).
+    /// Fills the clipboard section of a freshly built `menu` (the search
+    /// field is already at index 0).
+    private func startClipboardSection(in menu: NSMenu, inlineCount: Int, folderCount: Int) {
+        let key = ObjectIdentifier(menu)
+        clipboardSectionCounts[key] = 0
+        searchRowPools[key] = nil
+        showClipboardSection(in: menu, inlineCount: inlineCount, folderCount: folderCount)
+    }
+
+    /// Shows the clipboard rows for the current search query in `menu`'s
+    /// section: the normal inline + folder layout when the query is empty, or
+    /// a flat list ranked by fuzzy-match score when the user is searching
+    /// (folders disappear and the whole history is searched, not just the
+    /// inline items).
+    private func showClipboardSection(in menu: NSMenu, inlineCount: Int, folderCount: Int) {
+        let key = ObjectIdentifier(menu)
+        searchFillGenerations[key, default: 0] += 1
+        let history = clipboardManager?.clipboardHistory ?? []
+
+        let query = clipboardSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !history.isEmpty, !query.isEmpty {
+            let matches = clipboardSearchMatches(history: history, query: query)
+            if matches.isEmpty {
+                let noMatches = NSMenuItem(title: "No matches", action: nil, keyEquivalent: "")
+                noMatches.isEnabled = false
+                replaceClipboardSection(in: menu, with: [noMatches])
+            } else {
+                // Never shrink what is already on screen only to grow it back.
+                let shown = max(Self.searchRowsPerPass, clipboardSectionCounts[key] ?? 0)
+                showSearchResults(matches, history: history, count: shown, in: menu)
+            }
+            return
+        }
+
+        searchRowPools[key] = nil
+        replaceClipboardSection(in: menu, with: clipboardSectionItems(inlineCount: inlineCount, folderCount: folderCount))
+    }
+
+    /// Puts the top `count` matches in the section as rows, reusing this
+    /// menu's rows from earlier keystrokes. The rest are appended a screenful
+    /// per run-loop pass until the whole ranked list is in the menu, unless a
+    /// newer query takes over first.
+    private func showSearchResults(
+        _ matches: [ClipboardSearchFilter.Match],
+        history: [ClipboardItem],
+        count: Int,
+        in menu: NSMenu
+    ) {
+        let key = ObjectIdentifier(menu)
+        var pool = searchRowPools[key] ?? [:]
+        // Rows still in the section are reusable even after the pool was
+        // dropped (the status menu keeps its rows between opens).
+        for menuItem in currentClipboardSection(in: menu) where menuItem.view is ClipboardRowMenuView {
+            if let item = menuItem.representedObject as? ClipboardItem, pool[item.id] == nil {
+                pool[item.id] = menuItem
+            }
+        }
+
+        var used = Set<ObjectIdentifier>()
+        let rows = matches.prefix(count).map { match -> NSMenuItem in
+            let item = history[match.historyIndex]
+            // Numbers stay the item's position in the full history, so a
+            // filtered row shows the same number it has unfiltered.
+            let number = match.historyIndex + 1
+            if let row = pool[item.id], used.insert(ObjectIdentifier(row)).inserted {
+                if row.tag != number || (row.representedObject as? ClipboardItem)?.isPinned != item.isPinned {
+                    applyRowContent(to: row, item: item, number: number)
+                } else {
+                    row.representedObject = item
+                }
+                // A Return equivalent left from an earlier highlight must not
+                // come back with the row.
+                if row.menu == nil { row.keyEquivalent = "" }
+                return row
+            }
+            let row = createClipboardMenuItem(item: item, number: number)
+            pool[item.id] = row
+            used.insert(ObjectIdentifier(row))
+            return row
+        }
+        searchRowPools[key] = pool
+        replaceClipboardSection(in: menu, with: rows)
+
+        guard rows.count < matches.count else { return }
+        let generation = searchFillGenerations[key] ?? 0
+        // A run-loop timer, not GCD: the main queue doesn't drain during menu
+        // tracking, and .eventTracking is the menu session's mode. Each pass
+        // is its own run-loop turn, so typing gets in between passes.
+        let timer = Timer(timeInterval: 0, repeats: false) { [weak self, weak menu] _ in
+            guard let self, let menu,
+                  self.searchFillGenerations[key] == generation,
+                  self.clipboardSectionCounts[key] != nil else { return }
+            self.showSearchResults(matches, history: history, count: rows.count + Self.searchRowsPerPass, in: menu)
+        }
+        RunLoop.main.add(timer, forMode: .eventTracking)
+        RunLoop.main.add(timer, forMode: .default)
+    }
+
+    private func clipboardSearchMatches(history: [ClipboardItem], query: String) -> [ClipboardSearchFilter.Match] {
+        let index = clipboardSearchIndex ?? ClipboardSearchFilter.Index()
+        clipboardSearchIndex = index
+        return ClipboardSearchFilter.matches(history: history, query: query, index: index)
+    }
+
+    /// The menu items currently in `menu`'s clipboard section.
+    private func currentClipboardSection(in menu: NSMenu) -> [NSMenuItem] {
+        let count = clipboardSectionCounts[ObjectIdentifier(menu)] ?? 0
+        let sectionStart = 1 // search field sits at index 0
+        guard menu.numberOfItems >= sectionStart + count else { return [] }
+        return (0..<count).compactMap { menu.item(at: sectionStart + $0) }
+    }
+
+    /// Makes the section (rows after the search field at index 0) show exactly
+    /// `items`, in order, in place while the menu is open — NSMenu supports
+    /// live mutation. Items already there that keep their relative order stay
+    /// put and only the rest are removed or inserted: every row leaving or
+    /// joining the open menu costs layout and hover bookkeeping.
+    private func replaceClipboardSection(in menu: NSMenu, with items: [NSMenuItem]) {
+        let key = ObjectIdentifier(menu)
+        guard let count = clipboardSectionCounts[key] else { return }
+        let sectionStart = 1 // search field sits at index 0
+        guard menu.numberOfItems >= sectionStart + count else { return }
+
+        let current = currentClipboardSection(in: menu)
+        let itemsByID = Dictionary(uniqueKeysWithValues: items.map { (ObjectIdentifier($0), $0) })
+        OrderedSplice.apply(
+            from: current.map(ObjectIdentifier.init),
+            to: items.map(ObjectIdentifier.init),
+            remove: { menu.removeItem(at: sectionStart + $0) },
+            insert: { id, offset in
+                guard let item = itemsByID[id] else { return }
+                menu.insertItem(item, at: sectionStart + offset)
+            }
+        )
+        clipboardSectionCounts[key] = items.count
+    }
+
+    /// The unfiltered layout: inline rows plus lazy folder submenus, or the
+    /// empty-history placeholder.
     private func clipboardSectionItems(inlineCount: Int, folderCount: Int) -> [NSMenuItem] {
         let history = clipboardManager?.clipboardHistory ?? []
 
@@ -783,19 +935,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
             let emptyItem = NSMenuItem(title: "No clipboard history", action: nil, keyEquivalent: "")
             emptyItem.isEnabled = false
             return [emptyItem]
-        }
-
-        let query = clipboardSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !query.isEmpty {
-            let matches = ClipboardSearchFilter.matches(history: history, query: query)
-            guard !matches.isEmpty else {
-                let noMatches = NSMenuItem(title: "No matches", action: nil, keyEquivalent: "")
-                noMatches.isEnabled = false
-                return [noMatches]
-            }
-            // Numbers stay the item's position in the full history, so a
-            // filtered row shows the same number it has unfiltered.
-            return matches.map { createClipboardMenuItem(item: history[$0.historyIndex], number: $0.historyIndex + 1) }
         }
 
         var items: [NSMenuItem] = []
@@ -830,6 +969,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         view.onQueryChanged = { [weak self, weak menu] query in
             guard let self, let menu else { return }
             self.clipboardSearchQuery = query
+            if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                self.clipboardSearchIndex = nil
+            }
             self.refilterClipboardSection(in: menu)
         }
         view.onCommit = { [weak self, weak menu] in
@@ -838,31 +980,23 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         }
         let item = NSMenuItem()
         item.view = view
+        // Hidden from Topkit's screenshots and recordings (TEC-241).
+        ClipboardCaptureShield.shared.attach(to: item)
         return item
     }
 
-    /// Splices the clipboard section (rows after the search field at index 0)
-    /// in place while the menu is open — NSMenu supports live mutation.
+    /// Re-shows the clipboard section (rows after the search field at index 0)
+    /// for the current query, in place while the menu is open.
     private func refilterClipboardSection(in menu: NSMenu) {
-        guard let count = clipboardSectionCounts[ObjectIdentifier(menu)] else { return }
-        let sectionStart = 1 // search field sits at index 0
-        guard menu.numberOfItems >= sectionStart + count else { return }
-
+        guard clipboardSectionCounts[ObjectIdentifier(menu)] != nil else { return }
         let defaults = UserDefaults.standard
         let itemsInline = defaults.integer(forKey: "itemsInline")
         let itemsInFolder = defaults.integer(forKey: "itemsInFolder")
-        let newItems = clipboardSectionItems(
+        showClipboardSection(
+            in: menu,
             inlineCount: itemsInline > 0 ? itemsInline : 10,
             folderCount: itemsInFolder > 0 ? itemsInFolder : 50
         )
-
-        for _ in 0..<count {
-            menu.removeItem(at: sectionStart)
-        }
-        for (offset, item) in newItems.enumerated() {
-            menu.insertItem(item, at: sectionStart + offset)
-        }
-        clipboardSectionCounts[ObjectIdentifier(menu)] = newItems.count
     }
 
     /// Enter in the search field: copy the best match and dismiss the menu.
@@ -870,7 +1004,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         let query = clipboardSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return }
         let history = clipboardManager?.clipboardHistory ?? []
-        guard let top = ClipboardSearchFilter.matches(history: history, query: query).first else { return }
+        guard let top = clipboardSearchMatches(history: history, query: query).first else { return }
         menu.cancelTracking()
         performCopy(of: history[top.historyIndex])
     }
@@ -916,9 +1050,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         // guard on statusMenu/folder identity and ignore this menu.
         menu.delegate = self
         menu.addItem(makeSearchMenuItem(for: menu))
-        let sectionItems = clipboardSectionItems(inlineCount: inlineCount, folderCount: folderCount)
-        sectionItems.forEach { menu.addItem($0) }
-        clipboardSectionCounts[ObjectIdentifier(menu)] = sectionItems.count
+        startClipboardSection(in: menu, inlineCount: inlineCount, folderCount: folderCount)
 
         presentMenuAtCursor(menu)
     }
@@ -935,6 +1067,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         removeMenuReturnKeyMonitor()
         menuHighlightedClipboardItem = nil
         clipboardSectionCounts.removeValue(forKey: ObjectIdentifier(menu))
+        searchRowPools.removeValue(forKey: ObjectIdentifier(menu))
+        searchFillGenerations.removeValue(forKey: ObjectIdentifier(menu))
         restorePreviousAppFocus()
     }
 
@@ -1049,6 +1183,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         // and accessibility keep working off the title.
         let menuItem = NSMenuItem(title: content.title, action: #selector(copyClipboardItem(_:)), keyEquivalent: "")
         menuItem.representedObject = item
+        // The displayed number, so a reused search row can tell it is stale.
+        menuItem.tag = number
         menuItem.target = self
         menuItem.toolTip = content.toolTip
         menuItem.image = content.image
@@ -1077,6 +1213,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
             self.togglePin(of: current, rowMenu: menuItem.menu)
         }
         menuItem.view = view
+        ClipboardCaptureShield.shared.attach(to: menuItem)
         return menuItem
     }
 
@@ -1120,7 +1257,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         let history = clipboardManager?.clipboardHistory ?? []
         let query = clipboardSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         if !query.isEmpty {
-            return ClipboardSearchFilter.matches(history: history, query: query)
+            return clipboardSearchMatches(history: history, query: query)
                 .map { (history[$0.historyIndex], $0.historyIndex + 1) }
         }
         let itemsInline = UserDefaults.standard.integer(forKey: "itemsInline")
@@ -1166,6 +1303,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         let content = clipboardRowContent(for: item, number: number)
         menuItem.title = content.title
         menuItem.representedObject = item
+        menuItem.tag = number
         menuItem.toolTip = content.toolTip
         menuItem.image = content.image
         (menuItem.view as? ClipboardRowMenuView)?.configure(
