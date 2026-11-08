@@ -203,6 +203,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)
         
+        // ⌘A / ⌘C / ⌘V / ⌘X in text fields only work through main-menu key equivalents.
+        StandardEditMenu.install(in: NSApp)
+
         // Register default preferences
         registerDefaults()
 
