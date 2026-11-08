@@ -10,9 +10,15 @@ import XCTest
 final class ClipboardCaptureShieldTests: XCTestCase {
 
     private var closedMenus: [NSMenu] = []
+    /// "Hide clipboard from screen sharing" (TEC-356). Off by default here so the
+    /// TEC-241 tests below check Topkit's own captures on their own.
+    private var hidesFromScreenSharing = false
 
     private func makeShield() -> ClipboardCaptureShield {
-        ClipboardCaptureShield(closeMenu: { [unowned self] in self.closedMenus.append($0) })
+        ClipboardCaptureShield(
+            closeMenu: { [unowned self] in self.closedMenus.append($0) },
+            hidesFromScreenSharing: { [unowned self] in self.hidesFromScreenSharing }
+        )
     }
 
     private func makeWindow() -> NSWindow {
@@ -44,9 +50,14 @@ final class ClipboardCaptureShieldTests: XCTestCase {
 
     // MARK: Policy
 
-    func testHiddenFromCaptureOnlyWhileACaptureRuns() {
-        XCTAssertEqual(ClipboardCaptureShield.sharingType(isCaptureActive: true), .none)
-        XCTAssertEqual(ClipboardCaptureShield.sharingType(isCaptureActive: false), .readOnly)
+    func testSettingOffHidesFromCaptureOnlyWhileATopkitCaptureRuns() {
+        XCTAssertEqual(ClipboardCaptureShield.sharingType(isCaptureActive: true, hidesFromScreenSharing: false), .none)
+        XCTAssertEqual(ClipboardCaptureShield.sharingType(isCaptureActive: false, hidesFromScreenSharing: false), .readOnly)
+    }
+
+    func testSettingOnHidesFromEveryCaptureAllTheTime() {
+        XCTAssertEqual(ClipboardCaptureShield.sharingType(isCaptureActive: false, hidesFromScreenSharing: true), .none)
+        XCTAssertEqual(ClipboardCaptureShield.sharingType(isCaptureActive: true, hidesFromScreenSharing: true), .none)
     }
 
     func testRecordingShieldCoversPickingAndRecording() {
@@ -115,6 +126,88 @@ final class ClipboardCaptureShieldTests: XCTestCase {
 
         shield.setActive(false, for: .recording)
         XCTAssertEqual(window.sharingType, .readOnly)
+    }
+
+    // MARK: Screen sharing setting (TEC-356)
+
+    func testSettingIsOnWhenNeverSet() throws {
+        let suite = "ClipboardCaptureShieldTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        XCTAssertTrue(ClipboardCaptureShield.hidesFromScreenSharing(in: defaults))
+        defaults.set(false, forKey: ClipboardCaptureShield.hidesFromScreenSharingKey)
+        XCTAssertFalse(ClipboardCaptureShield.hidesFromScreenSharing(in: defaults))
+    }
+
+    func testAppRegistersTheSettingOn() {
+        AppDelegate.registerDefaultUserValues()
+        let registered = UserDefaults.standard.volatileDomain(forName: UserDefaults.registrationDomain)
+        XCTAssertEqual(registered[ClipboardCaptureShield.hidesFromScreenSharingKey] as? Bool, true)
+    }
+
+    /// The other app's share (Zoom, Meet, FaceTime…): no Topkit capture is running,
+    /// and the menu window is still hidden from it the moment it opens.
+    func testSettingOnHidesAMenuOpenedWithNoTopkitCapture() {
+        hidesFromScreenSharing = true
+        let shield = makeShield()
+        let window = makeWindow()
+        _ = showClipboardView(in: window, shield: shield)
+
+        XCTAssertFalse(shield.isCaptureActive)
+        XCTAssertEqual(window.sharingType, .none)
+    }
+
+    /// A Topkit recording ending must not un-hide the menu while the setting is on.
+    func testSettingOnKeepsTheMenuHiddenAfterATopkitCaptureEnds() {
+        hidesFromScreenSharing = true
+        let shield = makeShield()
+        let window = makeWindow()
+        _ = showClipboardView(in: window, shield: shield)
+
+        shield.setActive(true, for: .recording)
+        shield.setActive(false, for: .recording)
+
+        XCTAssertEqual(window.sharingType, .none)
+    }
+
+    /// Switching the setting reaches a menu window AppKit kept from an earlier opening.
+    func testSwitchingTheSettingUpdatesKnownWindows() {
+        let shield = makeShield()
+        let window = makeWindow()
+        _ = showClipboardView(in: window, shield: shield)
+        XCTAssertEqual(window.sharingType, .readOnly)
+
+        hidesFromScreenSharing = true
+        shield.settingDidChange()
+        XCTAssertEqual(window.sharingType, .none)
+
+        hidesFromScreenSharing = false
+        shield.settingDidChange()
+        XCTAssertEqual(window.sharingType, .readOnly)
+    }
+
+    /// Setting off still hides the menu from Topkit's own recordings (TEC-241).
+    func testSettingOffStillHidesFromTopkitRecordings() {
+        let shield = makeShield()
+        shield.setActive(true, for: .recording)
+        let window = makeWindow()
+        _ = showClipboardView(in: window, shield: shield)
+        shield.settingDidChange()
+
+        XCTAssertEqual(window.sharingType, .none)
+    }
+
+    /// Only a capture starting closes an open menu; switching the setting never does.
+    func testSwitchingTheSettingDoesNotCloseMenus() {
+        let shield = makeShield()
+        let window = makeWindow()
+        _ = showClipboardView(in: window, shield: shield)
+
+        hidesFromScreenSharing = true
+        shield.settingDidChange()
+
+        XCTAssertTrue(closedMenus.isEmpty)
     }
 
     // MARK: Closing open menus

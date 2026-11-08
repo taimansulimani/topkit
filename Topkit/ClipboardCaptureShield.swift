@@ -10,12 +10,23 @@ import AppKit
 /// `SCContentFilter` gets when a recording starts can never name a menu opened halfway
 /// through it. Leaving Topkit out as a whole application would also drop the Annotate,
 /// Halo and magnifier windows people record on purpose. A window whose `sharingType` is
-/// `.none` is left out of every ScreenCaptureKit capture (checked on device: a display
+/// `.none` is left out of Topkit's ScreenCaptureKit captures (checked on device: a display
 /// capture shows what is under the menu) and still works normally on screen. So the
 /// menu still opens during a recording; it just never reaches the file.
 ///
-/// It only hides while a Topkit capture is running, so other tools (and App Store
-/// screenshots of the menu itself) still see the menu the rest of the time.
+/// TEC-356: the same flag is the only public lever an app has over other apps' screen
+/// shares and recordings (calls, QuickTime, the macOS screenshot tool), so with "Hide
+/// clipboard from screen sharing" on (the default) clipboard windows are always
+/// `.none`. Always, not only while something captures: macOS gives no public signal
+/// that another app is reading the screen (no notification, nothing in
+/// `CGSessionCopyCurrentDictionary`), and the flag costs nothing while nobody captures,
+/// so there is nothing to watch for and no idle work. `CGWindowListCreateImage`
+/// documents leaving `kCGWindowSharingNone` windows out; ScreenCaptureKit, the only
+/// capture API left from macOS 15, leaves them out of Topkit's own display capture
+/// (TEC-241), but Apple does not document it there and some apps are reported to still
+/// see such windows, so check call apps on device. With the setting off, the menu hides
+/// only during a Topkit capture, as in TEC-241, so people who want to show their
+/// clipboard (or screenshot the menu) still can.
 ///
 /// Main thread only.
 final class ClipboardCaptureShield {
@@ -29,9 +40,19 @@ final class ClipboardCaptureShield {
         case recording
     }
 
-    /// The sharing type clipboard windows get: hidden from capture only while one runs.
-    static func sharingType(isCaptureActive: Bool) -> NSWindow.SharingType {
-        isCaptureActive ? .none : .readOnly
+    /// UserDefaults key for "Hide clipboard from screen sharing" (TEC-356).
+    static let hidesFromScreenSharingKey = "hideClipboardFromScreenSharing"
+
+    /// The setting, on when never set: a share showing a password is worse than a
+    /// menu missing from a screenshot.
+    static func hidesFromScreenSharing(in defaults: UserDefaults) -> Bool {
+        defaults.object(forKey: hidesFromScreenSharingKey) as? Bool ?? true
+    }
+
+    /// The sharing type clipboard windows get: hidden from every capture while the
+    /// setting is on, and from Topkit's own captures whatever the setting (TEC-241).
+    static func sharingType(isCaptureActive: Bool, hidesFromScreenSharing: Bool) -> NSWindow.SharingType {
+        isCaptureActive || hidesFromScreenSharing ? .none : .readOnly
     }
 
     /// Recording activity → whether the recording side of the shield is up. Covers the
@@ -49,9 +70,20 @@ final class ClipboardCaptureShield {
     /// Root menus holding clipboard history, closed when a capture starts.
     private let menus = NSHashTable<NSMenu>.weakObjects()
     private let closeMenu: (NSMenu) -> Void
+    private let hidesFromScreenSharing: () -> Bool
 
-    init(closeMenu: @escaping (NSMenu) -> Void = { $0.cancelTrackingWithoutAnimation() }) {
+    init(
+        closeMenu: @escaping (NSMenu) -> Void = { $0.cancelTrackingWithoutAnimation() },
+        hidesFromScreenSharing: @escaping () -> Bool = {
+            ClipboardCaptureShield.hidesFromScreenSharing(in: .standard)
+        }
+    ) {
         self.closeMenu = closeMenu
+        self.hidesFromScreenSharing = hidesFromScreenSharing
+    }
+
+    private var currentSharingType: NSWindow.SharingType {
+        Self.sharingType(isCaptureActive: isCaptureActive, hidesFromScreenSharing: hidesFromScreenSharing())
     }
 
     /// Marks a clipboard menu item (a history row or the search field) as clipboard
@@ -83,7 +115,7 @@ final class ClipboardCaptureShield {
     /// Called by the anchor when its item's view enters a window (the menu opened).
     func itemDidEnterWindow(_ item: NSMenuItem, window: NSWindow) {
         windows.add(window)
-        window.sharingType = Self.sharingType(isCaptureActive: isCaptureActive)
+        window.sharingType = currentSharingType
         if let menu = item.menu {
             var root = menu
             while let parent = root.supermenu { root = parent }
@@ -91,11 +123,17 @@ final class ClipboardCaptureShield {
         }
     }
 
+    /// Called when "Hide clipboard from screen sharing" is switched, so a menu window
+    /// AppKit kept from an earlier opening follows the new setting.
+    func settingDidChange() {
+        applySharingType()
+    }
+
     /// Re-applied on every change rather than only to new windows: AppKit can keep a
     /// menu window between openings, and one hidden for a capture must come back for
     /// other tools afterwards.
     private func applySharingType() {
-        let type = Self.sharingType(isCaptureActive: isCaptureActive)
+        let type = currentSharingType
         for window in windows.allObjects where window.sharingType != type {
             window.sharingType = type
         }
