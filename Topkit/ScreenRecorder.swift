@@ -11,7 +11,9 @@ import ScreenCaptureKit
 ///    through a pixel-buffer adaptor so the caption pill can be stamped onto
 ///    the pixels, and a low-rate refresh timer re-appends the last frame when
 ///    the caption changes while the screen is static (SCK only delivers
-///    frames when pixels change).
+///    frames when pixels change);
+///  - burned-in click rings (`showsClicks`, TEC-248) — same adaptor path; the
+///    refresh timer runs at animation rate while a ring is on screen.
 final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 
     enum RecorderError: LocalizedError {
@@ -32,6 +34,9 @@ final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
 
     private let micFormat: AVAudioFormat?
     private let burnsInCaptions: Bool
+    private let showsClicks: Bool
+    /// Frames go through the pixel-buffer adaptor so overlays can be stamped.
+    private var composites: Bool { burnsInCaptions || showsClicks }
 
     private var stream: SCStream?
     private var writer: AVAssetWriter?
@@ -51,10 +56,14 @@ final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
     private var lastVideoPTS = CMTime.invalid
     private var captionRefreshTimer: DispatchSourceTimer?
 
-    init(outputURL: URL, micFormat: AVAudioFormat? = nil, burnsInCaptions: Bool = false) {
+    // Click rings still animating — sampleQueue only.
+    private var clicks: [RecordedClick] = []
+
+    init(outputURL: URL, micFormat: AVAudioFormat? = nil, burnsInCaptions: Bool = false, showsClicks: Bool = false) {
         self.outputURL = outputURL
         self.micFormat = micFormat
         self.burnsInCaptions = burnsInCaptions
+        self.showsClicks = showsClicks
     }
 
     func start(
@@ -75,7 +84,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
             }
             writer.add(input)
 
-            if burnsInCaptions {
+            if composites {
                 pixelAdaptor = AVAssetWriterInputPixelBufferAdaptor(
                     assetWriterInput: input,
                     sourcePixelBufferAttributes: [
@@ -116,7 +125,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
             return
         }
 
-        if burnsInCaptions { startCaptionRefreshTimer() }
+        if composites { startCaptionRefreshTimer() }
 
         let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
         self.stream = stream
@@ -179,18 +188,35 @@ final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
         }
     }
 
+    /// Main thread. Queues a click ring; the refresh timer keeps it animating
+    /// even while the screen itself is static.
+    func addClick(_ click: RecordedClick) {
+        guard showsClicks else { return }
+        sampleQueue.async { [weak self] in
+            self?.clicks.append(click)
+        }
+    }
+
     private func startCaptionRefreshTimer() {
         let timer = DispatchSource.makeTimerSource(queue: sampleQueue)
-        timer.schedule(deadline: .now() + 0.25, repeating: 0.25)
+        // Click rings need animation-rate frames; captions alone only change
+        // a few times a second.
+        let interval: Double = showsClicks ? 1.0 / 30.0 : 0.25
+        timer.schedule(deadline: .now() + interval, repeating: interval)
         timer.setEventHandler { [weak self] in
             guard let self,
                   self.sessionStarted, !self.stopping,
-                  self.captionGeneration != self.appendedCaptionGeneration,
                   let base = self.lastFramePixelBuffer else { return }
-            // Re-append the last frame with the fresh caption at "now" so
-            // caption changes show up during static screen content.
             let now = CMClockGetTime(CMClockGetHostTimeClock())
             guard self.lastVideoPTS.isValid, now > self.lastVideoPTS else { return }
+            let captionChanged = self.captionGeneration != self.appendedCaptionGeneration
+            // Clicks are pruned once a frame past their end is appended, so a
+            // non-empty list also covers the final ring-free frame.
+            let clickAnimating = !self.clicks.isEmpty
+                && CMTimeGetSeconds(CMTimeSubtract(now, self.lastVideoPTS)) >= interval * 0.75
+            guard captionChanged || clickAnimating else { return }
+            // Re-append the last frame with the fresh overlays at "now" so
+            // they show up during static screen content.
             self.appendVideo(pixelBuffer: base, at: now)
         }
         timer.resume()
@@ -202,19 +228,28 @@ final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
         guard let writer, writer.status == .writing,
               let input, input.isReadyForMoreMediaData,
               let adaptor = pixelAdaptor else { return }
+        // The refresh timer and SCK both append: a late SCK frame stamped
+        // before the last refresh would be out of order and fail the writer.
+        guard !lastVideoPTS.isValid || pts > lastVideoPTS else { return }
+
+        clicks.removeAll { CMTimeGetSeconds(CMTimeSubtract(pts, $0.time)) > ClickIndicator.duration }
+        let visibleClicks = clicks.filter { $0.isVisible(at: pts) }
 
         var appended = false
-        if let caption = currentCaption {
+        if currentCaption != nil || !visibleClicks.isEmpty {
             if let pool = adaptor.pixelBufferPool {
                 var dest: CVPixelBuffer?
                 CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &dest)
-                if let dest, CaptionPixelCompositor.copyAndBurn(source: pixelBuffer, into: dest, caption: caption) {
+                let overlay: ((CGContext) -> Void)? = visibleClicks.isEmpty ? nil : { context in
+                    ClickIndicatorRenderer.draw(visibleClicks, at: pts, in: context)
+                }
+                if let dest, CaptionPixelCompositor.copyAndBurn(source: pixelBuffer, into: dest, caption: currentCaption, overlay: overlay) {
                     appended = adaptor.append(dest, withPresentationTime: pts)
                 }
             }
         }
         if !appended {
-            // No caption (or compositing unavailable): pass the frame through.
+            // Nothing to stamp (or compositing unavailable): pass the frame through.
             appended = adaptor.append(pixelBuffer, withPresentationTime: pts)
         }
         if appended {
@@ -314,7 +349,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, SCStreamDelegate {
             sessionStartTime = pts
             sessionStarted = true
         }
-        if burnsInCaptions {
+        if composites {
             guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
             // Retaining one SCK buffer (queueDepth 8) for the refresh timer.
             lastFramePixelBuffer = pixelBuffer

@@ -49,6 +49,8 @@
 		BF845CFB9967477E96A81DF6 /* HexColorHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2DB40257D243EBA9E787F7 /* HexColorHelpers.swift */; };
 		C4C780BE05E4CB0DB9BF3745 /* AnnotationContextBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E92543217821D2AD82A414C /* AnnotationContextBar.swift */; };
 		CAPBF000000000000000BRN1 /* CaptionBurnIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000BRN1 /* CaptionBurnIn.swift */; };
+		TEC248BF0000000000CLK1 /* ClickIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC248FR0000000000CLK1 /* ClickIndicator.swift */; };
+		TEC248BF0000000000TST1 /* ClickIndicatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC248FR0000000000TST1 /* ClickIndicatorTests.swift */; };
 		CAPBF000000000000000ENG1 /* CaptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000ENG1 /* CaptionEngine.swift */; };
 		CAPBF000000000000000MIC1 /* MicrophoneAudioSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000MIC1 /* MicrophoneAudioSource.swift */; };
 		CAPBF000000000000000MOD1 /* CaptionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000MOD1 /* CaptionModel.swift */; };
@@ -204,6 +206,8 @@
 		C2490DF920A443D89B7052C5 /* ClipboardHistoryStorageHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryStorageHelpers.swift; sourceTree = "<group>"; };
 		C95AB6640C9B41D993B28613 /* ShortcutKeyParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutKeyParserTests.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000BRN1 /* CaptionBurnIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionBurnIn.swift; sourceTree = "<group>"; };
+		TEC248FR0000000000CLK1 /* ClickIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickIndicator.swift; sourceTree = "<group>"; };
+		TEC248FR0000000000TST1 /* ClickIndicatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickIndicatorTests.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000ENG1 /* CaptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionEngine.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000MIC1 /* MicrophoneAudioSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneAudioSource.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000MOD1 /* CaptionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionModel.swift; sourceTree = "<group>"; };
@@ -365,6 +369,7 @@
 				TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */,
 				RECFR000000000000000TST2 /* TrimRangeTests.swift */,
 				GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */,
+				TEC248FR0000000000TST1 /* ClickIndicatorTests.swift */,
 				RECFR000000000000000TST3 /* RecordingDiscardTests.swift */,
 				TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */,
 				TEC285FR0000000000TST1 /* RecordingDragTests.swift */,
@@ -448,6 +453,7 @@
 				CAPFR000000000000000MOD1 /* CaptionModel.swift */,
 				CAPFR000000000000000ENG1 /* CaptionEngine.swift */,
 				CAPFR000000000000000BRN1 /* CaptionBurnIn.swift */,
+				TEC248FR0000000000CLK1 /* ClickIndicator.swift */,
 				CAPFR000000000000000OVL1 /* CaptionOverlayWindow.swift */,
 				CAPFR000000000000000MIC1 /* MicrophoneAudioSource.swift */,
 				RECFR000000000000000TOA1 /* ToastPresenter.swift */,
@@ -741,6 +747,7 @@
 				TEC234BF0000000000TST1 /* StandardEditMenuTests.swift in Sources */,
 				RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */,
 				GIFBF00000000000000TST01 /* RecordingGIFExportTests.swift in Sources */,
+				TEC248BF0000000000TST1 /* ClickIndicatorTests.swift in Sources */,
 				RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */,
 				TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */,
 				TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */,
@@ -785,6 +792,7 @@
 				CAPBF000000000000000MOD1 /* CaptionModel.swift in Sources */,
 				CAPBF000000000000000ENG1 /* CaptionEngine.swift in Sources */,
 				CAPBF000000000000000BRN1 /* CaptionBurnIn.swift in Sources */,
+				TEC248BF0000000000CLK1 /* ClickIndicator.swift in Sources */,
 				CAPBF000000000000000OVL1 /* CaptionOverlayWindow.swift in Sources */,
 				CAPBF000000000000000MIC1 /* MicrophoneAudioSource.swift in Sources */,
 				RECBF000000000000000TOA1 /* ToastPresenter.swift in Sources */,
