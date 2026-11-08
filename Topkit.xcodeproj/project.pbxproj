@@ -96,6 +96,7 @@
 		RECBF000000000000000MGR1 /* ScreenRecordingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */; };
 		RECBF000000000000000PLY1 /* RecordingPlayerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */; };
 		RECBF000000000000000SUP1 /* RecordingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000SUP1 /* RecordingSupport.swift */; };
+		TEC285BF0000000000DRG1 /* RecordingDrag.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC285FR0000000000DRG1 /* RecordingDrag.swift */; };
 		ACTWBF00000000000000APP1 /* AppActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACTWFR00000000000000APP1 /* AppActivation.swift */; };
 		ACTWBF00000000000000TST1 /* ActivationWaitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */; };
 		TEC241BF0000000000SHLD1 /* ClipboardCaptureShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */; };
@@ -107,6 +108,7 @@
 		RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST2 /* TrimRangeTests.swift */; };
 		RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST3 /* RecordingDiscardTests.swift */; };
 		TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */; };
+		TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC285FR0000000000TST1 /* RecordingDragTests.swift */; };
 		REZE1234567890ABCDEF01 /* ResizeEdge.swift in Sources */ = {isa = PBXBuildFile; fileRef = REZE1234567890ABCDEF02 /* ResizeEdge.swift */; };
 		S1C2R3E4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */; };
 		S3C4R5E6N7S8H9O0T1M2A3N4A5G6E7R8 /* ScreenshotAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */; };
@@ -243,6 +245,7 @@
 		RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecordingManager.swift; sourceTree = "<group>"; };
 		RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPlayerWindowController.swift; sourceTree = "<group>"; };
 		RECFR000000000000000SUP1 /* RecordingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSupport.swift; sourceTree = "<group>"; };
+		TEC285FR0000000000DRG1 /* RecordingDrag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDrag.swift; sourceTree = "<group>"; };
 		ACTWFR00000000000000APP1 /* AppActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivation.swift; sourceTree = "<group>"; };
 		ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivationWaitTests.swift; sourceTree = "<group>"; };
 		TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCaptureShield.swift; sourceTree = "<group>"; };
@@ -254,6 +257,7 @@
 		RECFR000000000000000TST2 /* TrimRangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrimRangeTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST3 /* RecordingDiscardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDiscardTests.swift; sourceTree = "<group>"; };
 		TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneVoiceProcessingTests.swift; sourceTree = "<group>"; };
+		TEC285FR0000000000TST1 /* RecordingDragTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDragTests.swift; sourceTree = "<group>"; };
 		REZE1234567890ABCDEF02 /* ResizeEdge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeEdge.swift; sourceTree = "<group>"; };
 		S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotManager.swift; sourceTree = "<group>"; };
 		S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnnotationView.swift; sourceTree = "<group>"; };
@@ -351,6 +355,7 @@
 				RECFR000000000000000TST2 /* TrimRangeTests.swift */,
 				RECFR000000000000000TST3 /* RecordingDiscardTests.swift */,
 				TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */,
+				TEC285FR0000000000TST1 /* RecordingDragTests.swift */,
 				8AE6BF72AB9E4F758A962264 /* RectangleSizeValidatorTests.swift */,
 				SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */,
 				ATST000000000000000A0002 /* AnnotationToolShortcutsTests.swift */,
@@ -424,6 +429,7 @@
 				M4G5N6I7F8Y9G0L1A2S3S4 /* MagnifyingGlassManager.swift */,
 				H2A3L4O5M6A7N8A9G0E1R2 /* HaloManager.swift */,
 				RECFR000000000000000SUP1 /* RecordingSupport.swift */,
+				TEC285FR0000000000DRG1 /* RecordingDrag.swift */,
 				ACTWFR00000000000000APP1 /* AppActivation.swift */,
 				TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */,
 				TEC234FR0000000000MENU1 /* StandardEditMenu.swift */,
@@ -720,6 +726,7 @@
 				RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */,
 				RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */,
 				TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */,
+				TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */,
 				0077DD70640F423480F22E92 /* RectangleSizeValidatorTests.swift in Sources */,
 				SAVT00000000000000000001 /* ScreenshotAnnotationViewToolbarTests.swift in Sources */,
 				ATST000000000000000A0001 /* AnnotationToolShortcutsTests.swift in Sources */,
@@ -754,6 +761,7 @@
 				M3G4N5I6F7Y8G9L0A1S2S3 /* MagnifyingGlassManager.swift in Sources */,
 				H1A2L3O4M5A6N7A8G9E0R1 /* HaloManager.swift in Sources */,
 				RECBF000000000000000SUP1 /* RecordingSupport.swift in Sources */,
+				TEC285BF0000000000DRG1 /* RecordingDrag.swift in Sources */,
 				ACTWBF00000000000000APP1 /* AppActivation.swift in Sources */,
 				TEC241BF0000000000SHLD1 /* ClipboardCaptureShield.swift in Sources */,
 				TEC234BF0000000000MENU1 /* StandardEditMenu.swift in Sources */,
