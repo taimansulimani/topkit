@@ -116,6 +116,9 @@
 		S7C8R9E0N1S2H3O4T5M6A7N8A9G0E1R2 /* SelectionConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = S8C9R0E1N2S3H4O5T6M7A8N9A0G1E2R3 /* SelectionConfirmView.swift */; };
 		SAVT00000000000000000001 /* ScreenshotAnnotationViewToolbarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */; };
 		SCH1234567890ABCDEF1234 /* ScreenCaptureHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCH1234567890ABCDEF5678 /* ScreenCaptureHelper.swift */; };
+		SCRL0000000000000STCH0001 /* ScrollingStitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCRL0000000000000STCH0002 /* ScrollingStitcher.swift */; };
+		SCRL0000000000000SESS0001 /* ScrollingCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCRL0000000000000SESS0002 /* ScrollingCaptureSession.swift */; };
+		SCRL0000000000000TEST0001 /* ScrollingStitcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCRL0000000000000TEST0002 /* ScrollingStitcherTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -265,6 +268,9 @@
 		S8C9R0E1N2S3H4O5T6M7A8N9A0G1E2R3 /* SelectionConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionConfirmView.swift; sourceTree = "<group>"; };
 		SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnnotationViewToolbarTests.swift; sourceTree = "<group>"; };
 		SCH1234567890ABCDEF5678 /* ScreenCaptureHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureHelper.swift; sourceTree = "<group>"; };
+		SCRL0000000000000STCH0002 /* ScrollingStitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingStitcher.swift; sourceTree = "<group>"; };
+		SCRL0000000000000SESS0002 /* ScrollingCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingCaptureSession.swift; sourceTree = "<group>"; };
+		SCRL0000000000000TEST0002 /* ScrollingStitcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingStitcherTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -345,6 +351,7 @@
 				1DDDEFFA6E40AFEF3A9BC065 /* AnnotationToolsFeatureTests.swift */,
 				A2075D3CAC54DA3FB8B4F311 /* CaptionModelTests.swift */,
 				9044141D37494CFF0E16FE21 /* RecordingConfirmToolbarTests.swift */,
+				SCRL0000000000000TEST0002 /* ScrollingStitcherTests.swift */,
 				F119BF57B57A4F6B92C0339B /* HexColorHelpersTests.swift */,
 				9DE532E232B34502B75184EF /* ImageHelpersTests.swift */,
 				D4412B085D0D4855A6BD2237 /* MultiMonitorHelperTests.swift */,
@@ -445,6 +452,8 @@
 				S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */,
 				MMH1234567890ABCDEF5678 /* MultiMonitorHelper.swift */,
 				SCH1234567890ABCDEF5678 /* ScreenCaptureHelper.swift */,
+				SCRL0000000000000STCH0002 /* ScrollingStitcher.swift */,
+				SCRL0000000000000SESS0002 /* ScrollingCaptureSession.swift */,
 				A1T2O3A4S5T6C7H8R9O0M1F2 /* ToastChrome.swift */,
 				PERM1234567890ABCDEF02 /* PermissionManager.swift */,
 				HOTK1234567890ABCDEF02 /* HotKeyManager.swift */,
@@ -716,6 +725,7 @@
 				8E07908081111E7A429D9C70 /* AnnotationToolsFeatureTests.swift in Sources */,
 				461EC9839CF7DC80896D0948 /* CaptionModelTests.swift in Sources */,
 				781780F728DCF849C166AC9B /* RecordingConfirmToolbarTests.swift in Sources */,
+				SCRL0000000000000TEST0001 /* ScrollingStitcherTests.swift in Sources */,
 				3AADD36FC343492498C96D1D /* HexColorHelpersTests.swift in Sources */,
 				B9046B3D5F2848589108DE05 /* ImageHelpersTests.swift in Sources */,
 				8BAE095A97B34C5E953E4D1C /* MultiMonitorHelperTests.swift in Sources */,
@@ -782,6 +792,8 @@
 				S5C6R7E8N9S0H1O2T3M4A5N6A7G8E9R0 /* ScreenshotSelectionView.swift in Sources */,
 				MMH1234567890ABCDEF1234 /* MultiMonitorHelper.swift in Sources */,
 				SCH1234567890ABCDEF1234 /* ScreenCaptureHelper.swift in Sources */,
+				SCRL0000000000000STCH0001 /* ScrollingStitcher.swift in Sources */,
+				SCRL0000000000000SESS0001 /* ScrollingCaptureSession.swift in Sources */,
 				A1T2O3A4S5T6C7H8R9O0M1B2 /* ToastChrome.swift in Sources */,
 				PERM1234567890ABCDEF01 /* PermissionManager.swift in Sources */,
 				HOTK1234567890ABCDEF01 /* HotKeyManager.swift in Sources */,

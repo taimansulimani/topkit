@@ -108,6 +108,9 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
     /// invisible). The manager updates this view via `relocateForScreenSwap`.
     var onRequestWindowMove: ((NSPoint) -> Void)?
 
+    /// Region step: the user pressed Scrolling. Passes the region in view-local coordinates.
+    var onScrollingCaptureRequested: ((NSRect) -> Void)?
+
     /// Current selection rect in view-local coordinates (live mode hole).
     var currentSelectionRect: NSRect { screenshotRect }
     
@@ -836,6 +839,20 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
         x += spacing
         toolbar.addSubview(makeToolbarDivider(atX: x, buttonY: y, buttonSize: buttonSize))
         x += 1 + spacing * 2
+
+        // Scrolling capture (TEC-246): only on the region step, where there is a live
+        // region to scroll. Same action-button styling as Close / Save.
+        if isRegionMode {
+            let scrollingButton = createToolButton(title: "Scrolling", icon: "scroll", tool: .freehand)
+            scrollingButton.frame = NSRect(x: x, y: y, width: buttonSize, height: buttonSize)
+            scrollingButton.tag = 0
+            scrollingButton.action = #selector(startScrollingCapture)
+            // Plain title, like the other action buttons: there is no shortcut to show.
+            scrollingButton.toolTip = "Scrolling"
+            scrollingButton.identifier = AnnotationToolbarChrome.Identifier.scrollingCaptureButton
+            toolbar.addSubview(scrollingButton)
+            x += buttonSize + spacing
+        }
 
         // Close button. These two pass `.freehand` only to satisfy the tag helper, so
         // their tooltips are set explicitly — otherwise they would advertise the
@@ -1622,6 +1639,14 @@ class ScreenshotAnnotationView: NSView, NSTextFieldDelegate, NSMenuDelegate {
         onSave?(annotatedImage)
     }
     
+    /// Region step only: hand the current region to the scrolling capture.
+    /// Marks drawn so far are not carried over; the stitched image opens in the editor.
+    @objc func startScrollingCapture() {
+        guard isRegionMode else { return }
+        dismissColorPanel()
+        onScrollingCaptureRequested?(screenshotRect)
+    }
+
     @objc private func closeAnnotation() {
         dismissColorPanel()
         onClose?()
