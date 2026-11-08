@@ -92,6 +92,7 @@
 		PRBF000000000000000000S1 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRBR000000000000000000S1 /* main.swift */; };
 		PRIV1234567890ABCDEF0002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIV1234567890ABCDEF0001 /* PrivacyInfo.xcprivacy */; };
 		RECBF000000000000000DST1 /* RecordingDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000DST1 /* RecordingDestination.swift */; };
+		GIFBF00000000000000EXP01 /* RecordingGIFExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = GIFFR00000000000000EXP01 /* RecordingGIFExport.swift */; };
 		RECBF000000000000000ENG1 /* ScreenRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000ENG1 /* ScreenRecorder.swift */; };
 		RECBF000000000000000MGR1 /* ScreenRecordingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */; };
 		RECBF000000000000000PLY1 /* RecordingPlayerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */; };
@@ -106,6 +107,7 @@
 		RECBF000000000000000TOA1 /* ToastPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TOA1 /* ToastPresenter.swift */; };
 		RECBF000000000000000TST1 /* RecordingSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST1 /* RecordingSupportTests.swift */; };
 		RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST2 /* TrimRangeTests.swift */; };
+		GIFBF00000000000000TST01 /* RecordingGIFExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */; };
 		RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST3 /* RecordingDiscardTests.swift */; };
 		TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */; };
 		TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC285FR0000000000TST1 /* RecordingDragTests.swift */; };
@@ -244,6 +246,7 @@
 		PRBR000000000000000000S1 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		PRIV1234567890ABCDEF0001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		RECFR000000000000000DST1 /* RecordingDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDestination.swift; sourceTree = "<group>"; };
+		GIFFR00000000000000EXP01 /* RecordingGIFExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingGIFExport.swift; sourceTree = "<group>"; };
 		RECFR000000000000000ENG1 /* ScreenRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecorder.swift; sourceTree = "<group>"; };
 		RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecordingManager.swift; sourceTree = "<group>"; };
 		RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPlayerWindowController.swift; sourceTree = "<group>"; };
@@ -258,6 +261,7 @@
 		RECFR000000000000000TOA1 /* ToastPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastPresenter.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST1 /* RecordingSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSupportTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST2 /* TrimRangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrimRangeTests.swift; sourceTree = "<group>"; };
+		GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingGIFExportTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST3 /* RecordingDiscardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDiscardTests.swift; sourceTree = "<group>"; };
 		TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneVoiceProcessingTests.swift; sourceTree = "<group>"; };
 		TEC285FR0000000000TST1 /* RecordingDragTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDragTests.swift; sourceTree = "<group>"; };
@@ -360,6 +364,7 @@
 				TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */,
 				TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */,
 				RECFR000000000000000TST2 /* TrimRangeTests.swift */,
+				GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */,
 				RECFR000000000000000TST3 /* RecordingDiscardTests.swift */,
 				TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */,
 				TEC285FR0000000000TST1 /* RecordingDragTests.swift */,
@@ -447,6 +452,7 @@
 				CAPFR000000000000000MIC1 /* MicrophoneAudioSource.swift */,
 				RECFR000000000000000TOA1 /* ToastPresenter.swift */,
 				RECFR000000000000000DST1 /* RecordingDestination.swift */,
+				GIFFR00000000000000EXP01 /* RecordingGIFExport.swift */,
 				RECFR000000000000000ENG1 /* ScreenRecorder.swift */,
 				RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */,
 				S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */,
@@ -734,6 +740,7 @@
 				TEC241BF0000000000TST1 /* ClipboardCaptureShieldTests.swift in Sources */,
 				TEC234BF0000000000TST1 /* StandardEditMenuTests.swift in Sources */,
 				RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */,
+				GIFBF00000000000000TST01 /* RecordingGIFExportTests.swift in Sources */,
 				RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */,
 				TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */,
 				TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */,
@@ -782,6 +789,7 @@
 				CAPBF000000000000000MIC1 /* MicrophoneAudioSource.swift in Sources */,
 				RECBF000000000000000TOA1 /* ToastPresenter.swift in Sources */,
 				RECBF000000000000000DST1 /* RecordingDestination.swift in Sources */,
+				GIFBF00000000000000EXP01 /* RecordingGIFExport.swift in Sources */,
 				RECBF000000000000000ENG1 /* ScreenRecorder.swift in Sources */,
 				RECBF000000000000000MGR1 /* ScreenRecordingManager.swift in Sources */,
 				RECBF000000000000000PLY1 /* RecordingPlayerWindowController.swift in Sources */,

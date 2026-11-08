@@ -60,14 +60,18 @@ enum RecordingDestination {
 
     /// Persist a chosen folder (also used by Preferences).
     static func store(folderURL: URL) {
+        store(folderURL: folderURL, bookmarkKey: RecordingDestinationKeys.folderBookmark, pathKey: RecordingDestinationKeys.folder)
+    }
+
+    static func store(folderURL: URL, bookmarkKey: String, pathKey: String) {
         if let bookmark = try? folderURL.bookmarkData(
             options: [.withSecurityScope],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         ) {
-            UserDefaults.standard.set(bookmark, forKey: RecordingDestinationKeys.folderBookmark)
+            UserDefaults.standard.set(bookmark, forKey: bookmarkKey)
         }
-        UserDefaults.standard.set(folderURL.path, forKey: RecordingDestinationKeys.folder)
+        UserDefaults.standard.set(folderURL.path, forKey: pathKey)
     }
 
     /// Resolve the stored folder and run `body` with its security scope
@@ -75,8 +79,14 @@ enum RecordingDestination {
     /// screenshots: refresh must happen while the scope is started).
     /// Returns nil when no folder is stored or `body` throws.
     static func withSaveFolderAccess<T>(_ body: (URL) throws -> T) -> T? {
+        withFolderAccess(bookmarkKey: RecordingDestinationKeys.folderBookmark, body)
+    }
+
+    /// `withSaveFolderAccess` for any folder bookmark stored under
+    /// `bookmarkKey` (the GIF folder uses its own).
+    static func withFolderAccess<T>(bookmarkKey: String, _ body: (URL) throws -> T) -> T? {
         let defaults = UserDefaults.standard
-        guard let bookmarkData = defaults.data(forKey: RecordingDestinationKeys.folderBookmark) else { return nil }
+        guard let bookmarkData = defaults.data(forKey: bookmarkKey) else { return nil }
         var isStale = false
         guard let folderURL = try? URL(
             resolvingBookmarkData: bookmarkData,
@@ -92,7 +102,7 @@ enum RecordingDestination {
             includingResourceValuesForKeys: nil,
             relativeTo: nil
            ) {
-            defaults.set(refreshed, forKey: RecordingDestinationKeys.folderBookmark)
+            defaults.set(refreshed, forKey: bookmarkKey)
         }
         guard let validated = ScreenshotDirectoryValidator.validatedScreenshotSaveDirectory(folderURL) else { return nil }
         return try? body(validated)
@@ -104,7 +114,11 @@ enum RecordingDestination {
     /// sandbox denies the reads and the player shows nothing). Returns the
     /// scoped folder URL to hold on to and pass to `endSaveFolderAccess`.
     static func beginSaveFolderAccess() -> URL? {
-        guard let bookmarkData = UserDefaults.standard.data(forKey: RecordingDestinationKeys.folderBookmark) else { return nil }
+        beginFolderAccess(bookmarkKey: RecordingDestinationKeys.folderBookmark)
+    }
+
+    static func beginFolderAccess(bookmarkKey: String) -> URL? {
+        guard let bookmarkData = UserDefaults.standard.data(forKey: bookmarkKey) else { return nil }
         var isStale = false
         guard let folderURL = try? URL(
             resolvingBookmarkData: bookmarkData,
@@ -140,13 +154,18 @@ enum RecordingDestination {
     /// names are rejected; collisions get " 2", " 3", … appended. Returns the
     /// new URL, or nil on failure (the original is left untouched).
     static func renameRecording(at originalURL: URL, to newBaseName: String) -> URL? {
+        renameFile(at: originalURL, to: newBaseName, bookmarkKey: RecordingDestinationKeys.folderBookmark)
+    }
+
+    /// `renameRecording` for a file inside the folder stored under `bookmarkKey`.
+    static func renameFile(at originalURL: URL, to newBaseName: String, bookmarkKey: String) -> URL? {
         let ext = originalURL.pathExtension
         let trimmed = newBaseName.trimmingCharacters(in: .whitespacesAndNewlines)
         let sanitized = trimmed
             .components(separatedBy: CharacterSet(charactersIn: "/\\:"))
             .joined(separator: "-")
         guard !sanitized.isEmpty else { return nil }
-        return withSaveFolderAccess { folder in
+        return withFolderAccess(bookmarkKey: bookmarkKey) { folder in
             let fm = FileManager.default
             func url(for name: String) -> URL {
                 folder.appendingPathComponent(ext.isEmpty ? name : "\(name).\(ext)")

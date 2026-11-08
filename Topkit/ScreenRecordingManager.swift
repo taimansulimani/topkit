@@ -86,6 +86,8 @@ class ScreenRecordingManager: ObservableObject {
     private var playerController: RecordingPlayerWindowController?
     /// Folder scope held open for the player's lifetime (see beginSaveFolderAccess).
     private var playerFolderScopeURL: URL?
+    /// GIF toolbar toggle, read when recording starts.
+    private var sessionExportsGIF = false
 
     // Dictation subtitles + mic audio (preflighted per session — a denied TCC
     // grant degrades the recording gracefully instead of blocking it)
@@ -490,6 +492,7 @@ class ScreenRecordingManager: ObservableObject {
             }
         }()
         pendingTarget = effectiveTarget
+        sessionExportsGIF = UserDefaults.standard.bool(forKey: RecordingGIFKeys.exportEnabled)
         teardownConfirmUI()
 
         let (screen, globalRect): (NSScreen, NSRect) = {
@@ -758,19 +761,25 @@ class ScreenRecordingManager: ObservableObject {
         }
         debugLog("✅ Recording saved to: \(finalURL.path)")
         ToastPresenter.shared.show(message: String(localized: "Recording saved"))
-        presentPlayer(for: finalURL)
+        var gifCompanion: RecordingGIFCompanion?
+        if sessionExportsGIF {
+            let companion = RecordingGIFCompanion(videoURL: finalURL)
+            companion.export(from: finalURL)
+            gifCompanion = companion
+        }
+        presentPlayer(for: finalURL, gifCompanion: gifCompanion)
     }
 
     /// The post-recording player. Closing it releases everything; there is no
     /// other way to open a video in Topkit.
-    private func presentPlayer(for url: URL) {
+    private func presentPlayer(for url: URL, gifCompanion: RecordingGIFCompanion? = nil) {
         playerController?.close() // its onClose ends any previous folder scope
         // Keep the save folder's security scope open while the player lives:
         // AVPlayer and the trim export read the file lazily, and the sandbox
         // denies those reads once the save's own scope has ended.
         playerFolderScopeURL = RecordingDestination.beginSaveFolderAccess()
         (NSApp.delegate as? AppDelegate)?.pushRegularActivation()
-        let controller = RecordingPlayerWindowController(fileURL: url) { [weak self] in
+        let controller = RecordingPlayerWindowController(fileURL: url, gifCompanion: gifCompanion) { [weak self] in
             guard let self else { return }
             self.playerController = nil
             if let scoped = self.playerFolderScopeURL {
