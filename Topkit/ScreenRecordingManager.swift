@@ -98,6 +98,9 @@ class ScreenRecordingManager: ObservableObject {
     private var captionOverlay: CaptionOverlayController?
     private var recordingPixelSize: (width: Int, height: Int) = (0, 0)
 
+    // Show clicks (TEC-248): rings burned into the video at each click.
+    private var clickMonitor: ClickMonitor?
+
     private init() {}
 
     // MARK: - Entry points
@@ -579,10 +582,12 @@ class ScreenRecordingManager: ObservableObject {
             }
         }
 
+        let showsClicks = UserDefaults.standard.bool(forKey: ClickIndicator.defaultsKey)
         let recorder = ScreenRecorder(
             outputURL: RecordingDestination.makeStagingURL(),
             micFormat: sessionMicAudioEnabled ? micSource?.format : nil,
-            burnsInCaptions: sessionCaptionsEnabled
+            burnsInCaptions: sessionCaptionsEnabled,
+            showsClicks: showsClicks
         )
         recorder.onStreamStoppedUnexpectedly = { [weak self] _ in
             // Display unplugged / recorded window closed / permission pulled:
@@ -599,6 +604,7 @@ class ScreenRecordingManager: ObservableObject {
             }
             self.setActivity(.recording)
             self.startCaptureExtras()
+            if showsClicks { self.startClickMonitor(target: target) }
             // Esc stops the recording only after any live overlay tool has had a chance
             // to consume it (Annotate / Halo / Measure / …). Recording's Carbon hotkey
             // otherwise eats Esc system-wide and those tools never see the key.
@@ -651,7 +657,37 @@ class ScreenRecordingManager: ObservableObject {
         }
     }
 
+    /// Feeds every click inside the recorded area to the recorder as a ring.
+    private func startClickMonitor(target: CaptureTarget) {
+        let monitor = ClickMonitor()
+        monitor.start { [weak self] globalPoint, kind in
+            guard let self, self.activity == .recording, let recorder = self.recorder else { return }
+            // Window mode: the window may have moved since recording started.
+            let captureRect: NSRect?
+            switch target {
+            case .region(_, let rect): captureRect = rect
+            case .window(let windowID, _, _): captureRect = Self.cocoaBounds(windowID: windowID)
+            }
+            guard let captureRect,
+                  let center = ClickIndicator.videoPoint(
+                      globalPoint: globalPoint,
+                      captureRect: captureRect,
+                      pixelSize: self.recordingPixelSize
+                  ) else { return }
+            recorder.addClick(RecordedClick(
+                center: center,
+                time: CMClockGetTime(CMClockGetHostTimeClock()),
+                kind: kind,
+                color: ClickIndicator.color(),
+                scale: ClickIndicator.pixelScale(captureRect: captureRect, pixelWidth: self.recordingPixelSize.width)
+            ))
+        }
+        clickMonitor = monitor
+    }
+
     private func teardownCaptureExtras() {
+        clickMonitor?.stop()
+        clickMonitor = nil
         captionSession?.stop()
         captionSession = nil
         micSource?.stop()

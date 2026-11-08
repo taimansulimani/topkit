@@ -72,7 +72,7 @@ class SelectionConfirmView: NSView {
         toolbar.wantsLayer = true
         toolbar.layer?.cornerRadius = 5
 
-        // Layout order: [Subtitles] [Audio] | divider | [Cancel] [Start Recording].
+        // Layout order: [Subtitles] [Audio] [GIF] [Clicks] | divider | [Cancel] [Start Recording].
         // Recording flow: Subtitles + Audio toggles first (sharing the Preferences prefs),
         // then a divider before the action buttons.
         if showsRecordingOptions {
@@ -104,6 +104,15 @@ class SelectionConfirmView: NSView {
             gifToggle.frame.origin = NSPoint(x: x, y: y + (buttonHeight - gifToggle.frame.height) / 2)
             toolbar.addSubview(gifToggle)
             x += gifToggle.frame.width + spacing
+            // Show clicks (TEC-248): off by default, persisted like the others.
+            let clicksToggle = makeOptionToggle(
+                title: String(localized: "Clicks"),
+                isOn: UserDefaults.standard.bool(forKey: ClickIndicator.defaultsKey),
+                action: #selector(showClicksToggled(_:))
+            )
+            clicksToggle.frame.origin = NSPoint(x: x, y: y + (buttonHeight - clicksToggle.frame.height) / 2)
+            toolbar.addSubview(clicksToggle)
+            x += clicksToggle.frame.width + spacing
 
             x += spacing
             toolbar.addSubview(makeDivider(atX: x, buttonY: y, buttonHeight: buttonHeight))
@@ -203,6 +212,10 @@ class SelectionConfirmView: NSView {
 
     @objc private func gifToggled(_ sender: NSButton) {
         UserDefaults.standard.set(sender.state == .on, forKey: RecordingGIFKeys.exportEnabled)
+    }
+
+    @objc private func showClicksToggled(_ sender: NSButton) {
+        UserDefaults.standard.set(sender.state == .on, forKey: ClickIndicator.defaultsKey)
     }
 
     @objc private func confirmTapped() {
