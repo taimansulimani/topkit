@@ -92,6 +92,7 @@ enum AnnotationToolbarChrome {
         static let editorToolbar = NSUserInterfaceItemIdentifier("annotation.editor.toolbar")
         static let editorSliderRow = NSUserInterfaceItemIdentifier("annotation.editor.sliderRow")
         static let annotateToolStrip = NSUserInterfaceItemIdentifier("annotate.toolStrip")
+        static let scrollingCaptureButton = NSUserInterfaceItemIdentifier("annotation.editor.scrolling")
     }
 
     // MARK: - Container

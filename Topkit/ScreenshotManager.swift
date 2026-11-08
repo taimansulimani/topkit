@@ -167,6 +167,8 @@ class ScreenshotManager: ObservableObject {
     /// If `addGlobalMonitor` is unavailable (e.g. denied Input Monitoring), poll cursor position at a low rate instead.
     private var screenshotToolCursorFallbackTimer: Timer?
     private var screenRecordingPermissionTimer: Timer?
+    /// Live while the user scrolls a region for a scrolling screenshot (TEC-246).
+    private var scrollingSession: ScrollingCaptureSession?
     
     // Legacy single references for compatibility
     private var selectionWindow: NSWindow? { selectionOverlays.first?.window }
@@ -192,7 +194,7 @@ class ScreenshotManager: ObservableObject {
         // Keyed off real windows rather than `isAnnotating` alone — if that flag ever
         // stuck true with nothing on screen, every annotate shortcut in the app would
         // go dead with no way back.
-        return !selectionOverlays.isEmpty
+        return !selectionOverlays.isEmpty || scrollingSession != nil
     }
 
     func takeScreenshot() {
@@ -221,7 +223,7 @@ class ScreenshotManager: ObservableObject {
     }
     
     private func startSelection() {
-        guard !isCapturingFrozenGrabs else { return }
+        guard !isCapturingFrozenGrabs, scrollingSession == nil else { return }
         PermissionManager.shared.markScreenRecordingPermissionGranted()
 
         for overlay in selectionOverlays {
@@ -435,6 +437,11 @@ class ScreenshotManager: ObservableObject {
         view.onClose = { [weak self] in
             self?.closeAnnotationView()
         }
+        view.onScrollingCaptureRequested = { [weak self] localRect in
+            guard let self else { return }
+            let globalRect = localRect.offsetBy(dx: self.annotationScreenOrigin.x, dy: self.annotationScreenOrigin.y)
+            DispatchQueue.main.async { self.startScrollingCapture(globalRect: globalRect) }
+        }
         view.configureLiveHoleFrozenSources(screenOrigin: activeScreenFrame.origin, snapshots: frozenSnaps.map { (frame: $0.frame, image: $0.image) })
         view.onContentNeedsRedraw = { [weak self] in
             guard let self = self else { return }
@@ -502,6 +509,75 @@ class ScreenshotManager: ObservableObject {
         saveAnnotatedScreenshot(composited)
     }
     
+    // MARK: - Scrolling capture (TEC-246)
+
+    /// Swap the frozen region step for the live scrolling capture: the frozen overlay
+    /// goes, the user scrolls the real content under a frame, and Done opens the
+    /// stitched image in the same editor a window capture opens in.
+    private func startScrollingCapture(globalRect: NSRect) {
+        guard scrollingSession == nil, annotationWindow != nil else { return }
+        let center = NSPoint(x: globalRect.midX, y: globalRect.midY)
+        guard let screen = MultiMonitorHelper.screenContaining(center) ?? NSScreen.main,
+              let session = ScrollingCaptureSession(region: globalRect, screen: screen) else {
+            showToast(message: String(localized: "Could not start a scrolling capture"))
+            return
+        }
+        // Tear down the frozen step but stay in the screenshot flow (Annotate stays
+        // suspended, the menu bar icon stays active).
+        dimOverlayPointerInteractionActive = false
+        NSColorPanel.shared.orderOut(nil)
+        annotationWindow?.orderOut(nil)
+        // Detach the view so its app-wide key monitor goes now: otherwise Esc / Return
+        // meant for the Done / Cancel bar could still reach the old region step.
+        annotationWindow?.contentView = nil
+        annotationWindow = nil
+        annotationView = nil
+        for dimWindow in dimOverlayWindows { dimWindow.orderOut(nil) }
+        dimOverlayWindows.removeAll()
+        dimOverlayViews.removeAll()
+        dimOverlayScreenFrames.removeAll()
+        currentFrozenSnaps.removeAll()
+        removeScreenshotToolCursorGlobalMonitor()
+        NSCursor.arrow.set()
+
+        session.onFinish = { [weak self, weak session] image in
+            guard let self, let session, self.scrollingSession === session else { return }
+            self.scrollingSession = nil
+            guard let image else {
+                self.log("❌ Scrolling capture produced no image")
+                self.endScreenshotFlowWithoutEditor()
+                self.showToast(message: String(localized: "Could not capture the scrolling region — check Screen Recording permission for Topkit"))
+                return
+            }
+            // Point size from the display's backing scale, so Retina pixels stay crisp.
+            let nsImage = NSImage(
+                cgImage: image,
+                size: NSSize(width: CGFloat(image.width) / session.scale, height: CGFloat(image.height) / session.scale)
+            )
+            self.showAnnotationView(with: nsImage, targetScreen: session.screen)
+            self.installScreenshotToolCursorGlobalMonitor()
+        }
+        session.onCancel = { [weak self, weak session] in
+            guard let self, let session, self.scrollingSession === session else { return }
+            self.scrollingSession = nil
+            self.endScreenshotFlowWithoutEditor()
+            if UserDefaults.standard.bool(forKey: "playNotificationSounds") {
+                NSSound.beep()
+            }
+            self.showToast(message: String(localized: "Screenshot canceled"))
+        }
+        scrollingSession = session
+        session.start()
+    }
+
+    private func endScreenshotFlowWithoutEditor() {
+        isAnnotating = false; AnnotateManager.shared.setSuspended(false)
+        onScreenshotStateChanged?(false)
+        stopScreenRecordingPermissionMonitor()
+        removeScreenshotToolCursorGlobalMonitor()
+        NSCursor.arrow.set()
+    }
+
     private func captureWindow(windowID: CGWindowID, screenFrame: CGRect) {
         guard !selectionOverlays.isEmpty else {
             cancelSelection()
@@ -926,7 +1002,9 @@ class ScreenshotManager: ObservableObject {
     
     /// Abort any in-progress region pick or annotation because screen recording was revoked.
     func abortForPermissionLoss() {
-        if annotationWindow != nil {
+        if let session = scrollingSession {
+            session.cancel()
+        } else if annotationWindow != nil {
             closeAnnotationView()
         } else if !selectionOverlays.isEmpty {
             cancelSelection()
@@ -1178,7 +1256,9 @@ class ScreenshotManager: ObservableObject {
             // Use preflight only — the full verify path touches ScreenCaptureKit and can flicker the display.
             guard !PermissionManager.shared.hasScreenRecordingPermission() else { return }
             self.stopScreenRecordingPermissionMonitor()
-            if self.annotationWindow != nil {
+            if let session = self.scrollingSession {
+                session.cancel()
+            } else if self.annotationWindow != nil {
                 self.closeAnnotationView()
             } else if !self.selectionOverlays.isEmpty {
                 self.cancelSelection()
