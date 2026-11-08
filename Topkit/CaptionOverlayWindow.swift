@@ -56,6 +56,10 @@ final class CaptionOverlayController {
         window.hasShadow = false
         window.animationBehavior = .none
         window.ignoresMouseEvents = true
+        // Left out of every capture, not only by the filter's window list: a window
+        // this small and clear is not always listed when the stream starts, and then
+        // the recording got this caption as well as its burned-in copy.
+        window.sharingType = .none
         window.contentView = textView
         window.orderFrontRegardless()
     }
