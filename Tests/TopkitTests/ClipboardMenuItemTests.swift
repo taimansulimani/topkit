@@ -91,6 +91,27 @@ final class ClipboardMenuItemTests: XCTestCase {
         XCTAssertEqual(rows.filter(\._isHoveredForTesting).count, 1, "never more than one hovered row")
     }
 
+    /// Copy a file, open the menu, run the pointer down the rows: rows stayed lit
+    /// behind it. AppKit had dropped their mouseExited. Entering a row now takes the
+    /// hover from whichever row still had it.
+    func testEnteringARowTakesHoverFromARowThatMissedItsExit() {
+        _ = NSApplication.shared
+        let (window, rows) = makeStackedRowsInWindow(count: 3)
+        defer { window.close() }
+        func enter(_ row: ClipboardRowMenuView) {
+            let event = NSEvent.enterExitEvent(
+                with: .mouseEntered, location: .zero, modifierFlags: [], timestamp: 0,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+                trackingNumber: 0, userData: nil
+            )!
+            row.mouseEntered(with: event)
+        }
+        enter(rows[0])
+        enter(rows[1]) // no mouseExited for rows[0]
+        enter(rows[2]) // nor for rows[1]
+        XCTAssertEqual(rows.map(\._isHoveredForTesting), [false, false, true])
+    }
+
     func testRowWatchesGeometryOnlyWhileItIsInAMenuWindow() {
         _ = NSApplication.shared
         let (window, rows) = makeStackedRowsInWindow(count: 1)

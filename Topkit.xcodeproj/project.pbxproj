@@ -49,6 +49,8 @@
 		BF845CFB9967477E96A81DF6 /* HexColorHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2DB40257D243EBA9E787F7 /* HexColorHelpers.swift */; };
 		C4C780BE05E4CB0DB9BF3745 /* AnnotationContextBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E92543217821D2AD82A414C /* AnnotationContextBar.swift */; };
 		CAPBF000000000000000BRN1 /* CaptionBurnIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000BRN1 /* CaptionBurnIn.swift */; };
+		TEC248BF0000000000CLK1 /* ClickIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC248FR0000000000CLK1 /* ClickIndicator.swift */; };
+		TEC248BF0000000000TST1 /* ClickIndicatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC248FR0000000000TST1 /* ClickIndicatorTests.swift */; };
 		CAPBF000000000000000ENG1 /* CaptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000ENG1 /* CaptionEngine.swift */; };
 		CAPBF000000000000000MIC1 /* MicrophoneAudioSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000MIC1 /* MicrophoneAudioSource.swift */; };
 		CAPBF000000000000000MOD1 /* CaptionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPFR000000000000000MOD1 /* CaptionModel.swift */; };
@@ -92,18 +94,26 @@
 		PRBF000000000000000000S1 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRBR000000000000000000S1 /* main.swift */; };
 		PRIV1234567890ABCDEF0002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIV1234567890ABCDEF0001 /* PrivacyInfo.xcprivacy */; };
 		RECBF000000000000000DST1 /* RecordingDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000DST1 /* RecordingDestination.swift */; };
+		GIFBF00000000000000EXP01 /* RecordingGIFExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = GIFFR00000000000000EXP01 /* RecordingGIFExport.swift */; };
 		RECBF000000000000000ENG1 /* ScreenRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000ENG1 /* ScreenRecorder.swift */; };
 		RECBF000000000000000MGR1 /* ScreenRecordingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */; };
 		RECBF000000000000000PLY1 /* RecordingPlayerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */; };
 		RECBF000000000000000SUP1 /* RecordingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000SUP1 /* RecordingSupport.swift */; };
+		TEC285BF0000000000DRG1 /* RecordingDrag.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC285FR0000000000DRG1 /* RecordingDrag.swift */; };
 		ACTWBF00000000000000APP1 /* AppActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACTWFR00000000000000APP1 /* AppActivation.swift */; };
 		ACTWBF00000000000000TST1 /* ActivationWaitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */; };
 		TEC241BF0000000000SHLD1 /* ClipboardCaptureShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */; };
 		TEC241BF0000000000TST1 /* ClipboardCaptureShieldTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */; };
+		TEC234BF0000000000MENU1 /* StandardEditMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC234FR0000000000MENU1 /* StandardEditMenu.swift */; };
+		TEC234BF0000000000TST1 /* StandardEditMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */; };
 		RECBF000000000000000TOA1 /* ToastPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TOA1 /* ToastPresenter.swift */; };
 		RECBF000000000000000TST1 /* RecordingSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST1 /* RecordingSupportTests.swift */; };
 		RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST2 /* TrimRangeTests.swift */; };
+		GIFBF00000000000000TST01 /* RecordingGIFExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */; };
 		RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST3 /* RecordingDiscardTests.swift */; };
+		TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */; };
+		TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC285FR0000000000TST1 /* RecordingDragTests.swift */; };
+		APPVERBF00000000000TST1 /* AppVersionLabelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPVERFR00000000000TST1 /* AppVersionLabelTests.swift */; };
 		REZE1234567890ABCDEF01 /* ResizeEdge.swift in Sources */ = {isa = PBXBuildFile; fileRef = REZE1234567890ABCDEF02 /* ResizeEdge.swift */; };
 		S1C2R3E4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */; };
 		S3C4R5E6N7S8H9O0T1M2A3N4A5G6E7R8 /* ScreenshotAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */; };
@@ -111,6 +121,9 @@
 		S7C8R9E0N1S2H3O4T5M6A7N8A9G0E1R2 /* SelectionConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = S8C9R0E1N2S3H4O5T6M7A8N9A0G1E2R3 /* SelectionConfirmView.swift */; };
 		SAVT00000000000000000001 /* ScreenshotAnnotationViewToolbarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */; };
 		SCH1234567890ABCDEF1234 /* ScreenCaptureHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCH1234567890ABCDEF5678 /* ScreenCaptureHelper.swift */; };
+		SCRL0000000000000STCH0001 /* ScrollingStitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCRL0000000000000STCH0002 /* ScrollingStitcher.swift */; };
+		SCRL0000000000000SESS0001 /* ScrollingCaptureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCRL0000000000000SESS0002 /* ScrollingCaptureSession.swift */; };
+		SCRL0000000000000TEST0001 /* ScrollingStitcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCRL0000000000000TEST0002 /* ScrollingStitcherTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -194,6 +207,8 @@
 		C2490DF920A443D89B7052C5 /* ClipboardHistoryStorageHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHistoryStorageHelpers.swift; sourceTree = "<group>"; };
 		C95AB6640C9B41D993B28613 /* ShortcutKeyParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutKeyParserTests.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000BRN1 /* CaptionBurnIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionBurnIn.swift; sourceTree = "<group>"; };
+		TEC248FR0000000000CLK1 /* ClickIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickIndicator.swift; sourceTree = "<group>"; };
+		TEC248FR0000000000TST1 /* ClickIndicatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickIndicatorTests.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000ENG1 /* CaptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionEngine.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000MIC1 /* MicrophoneAudioSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneAudioSource.swift; sourceTree = "<group>"; };
 		CAPFR000000000000000MOD1 /* CaptionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionModel.swift; sourceTree = "<group>"; };
@@ -236,18 +251,26 @@
 		PRBR000000000000000000S1 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		PRIV1234567890ABCDEF0001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		RECFR000000000000000DST1 /* RecordingDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDestination.swift; sourceTree = "<group>"; };
+		GIFFR00000000000000EXP01 /* RecordingGIFExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingGIFExport.swift; sourceTree = "<group>"; };
 		RECFR000000000000000ENG1 /* ScreenRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecorder.swift; sourceTree = "<group>"; };
 		RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecordingManager.swift; sourceTree = "<group>"; };
 		RECFR000000000000000PLY1 /* RecordingPlayerWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPlayerWindowController.swift; sourceTree = "<group>"; };
 		RECFR000000000000000SUP1 /* RecordingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSupport.swift; sourceTree = "<group>"; };
+		TEC285FR0000000000DRG1 /* RecordingDrag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDrag.swift; sourceTree = "<group>"; };
 		ACTWFR00000000000000APP1 /* AppActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivation.swift; sourceTree = "<group>"; };
 		ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivationWaitTests.swift; sourceTree = "<group>"; };
 		TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCaptureShield.swift; sourceTree = "<group>"; };
 		TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCaptureShieldTests.swift; sourceTree = "<group>"; };
+		TEC234FR0000000000MENU1 /* StandardEditMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardEditMenu.swift; sourceTree = "<group>"; };
+		TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardEditMenuTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TOA1 /* ToastPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastPresenter.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST1 /* RecordingSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSupportTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST2 /* TrimRangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrimRangeTests.swift; sourceTree = "<group>"; };
+		GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingGIFExportTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST3 /* RecordingDiscardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDiscardTests.swift; sourceTree = "<group>"; };
+		TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneVoiceProcessingTests.swift; sourceTree = "<group>"; };
+		TEC285FR0000000000TST1 /* RecordingDragTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDragTests.swift; sourceTree = "<group>"; };
+		APPVERFR00000000000TST1 /* AppVersionLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionLabelTests.swift; sourceTree = "<group>"; };
 		REZE1234567890ABCDEF02 /* ResizeEdge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeEdge.swift; sourceTree = "<group>"; };
 		S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotManager.swift; sourceTree = "<group>"; };
 		S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnnotationView.swift; sourceTree = "<group>"; };
@@ -255,6 +278,9 @@
 		S8C9R0E1N2S3H4O5T6M7A8N9A0G1E2R3 /* SelectionConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionConfirmView.swift; sourceTree = "<group>"; };
 		SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnnotationViewToolbarTests.swift; sourceTree = "<group>"; };
 		SCH1234567890ABCDEF5678 /* ScreenCaptureHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureHelper.swift; sourceTree = "<group>"; };
+		SCRL0000000000000STCH0002 /* ScrollingStitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingStitcher.swift; sourceTree = "<group>"; };
+		SCRL0000000000000SESS0002 /* ScrollingCaptureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingCaptureSession.swift; sourceTree = "<group>"; };
+		SCRL0000000000000TEST0002 /* ScrollingStitcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingStitcherTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -335,14 +361,21 @@
 				1DDDEFFA6E40AFEF3A9BC065 /* AnnotationToolsFeatureTests.swift */,
 				A2075D3CAC54DA3FB8B4F311 /* CaptionModelTests.swift */,
 				9044141D37494CFF0E16FE21 /* RecordingConfirmToolbarTests.swift */,
+				SCRL0000000000000TEST0002 /* ScrollingStitcherTests.swift */,
 				F119BF57B57A4F6B92C0339B /* HexColorHelpersTests.swift */,
 				9DE532E232B34502B75184EF /* ImageHelpersTests.swift */,
 				D4412B085D0D4855A6BD2237 /* MultiMonitorHelperTests.swift */,
 				RECFR000000000000000TST1 /* RecordingSupportTests.swift */,
 				ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */,
 				TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */,
+				TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */,
 				RECFR000000000000000TST2 /* TrimRangeTests.swift */,
+				GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */,
+				TEC248FR0000000000TST1 /* ClickIndicatorTests.swift */,
 				RECFR000000000000000TST3 /* RecordingDiscardTests.swift */,
+				TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */,
+				TEC285FR0000000000TST1 /* RecordingDragTests.swift */,
+				APPVERFR00000000000TST1 /* AppVersionLabelTests.swift */,
 				8AE6BF72AB9E4F758A962264 /* RectangleSizeValidatorTests.swift */,
 				SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */,
 				ATST000000000000000A0002 /* AnnotationToolShortcutsTests.swift */,
@@ -416,20 +449,26 @@
 				M4G5N6I7F8Y9G0L1A2S3S4 /* MagnifyingGlassManager.swift */,
 				H2A3L4O5M6A7N8A9G0E1R2 /* HaloManager.swift */,
 				RECFR000000000000000SUP1 /* RecordingSupport.swift */,
+				TEC285FR0000000000DRG1 /* RecordingDrag.swift */,
 				ACTWFR00000000000000APP1 /* AppActivation.swift */,
 				TEC241FR0000000000SHLD1 /* ClipboardCaptureShield.swift */,
+				TEC234FR0000000000MENU1 /* StandardEditMenu.swift */,
 				CAPFR000000000000000MOD1 /* CaptionModel.swift */,
 				CAPFR000000000000000ENG1 /* CaptionEngine.swift */,
 				CAPFR000000000000000BRN1 /* CaptionBurnIn.swift */,
+				TEC248FR0000000000CLK1 /* ClickIndicator.swift */,
 				CAPFR000000000000000OVL1 /* CaptionOverlayWindow.swift */,
 				CAPFR000000000000000MIC1 /* MicrophoneAudioSource.swift */,
 				RECFR000000000000000TOA1 /* ToastPresenter.swift */,
 				RECFR000000000000000DST1 /* RecordingDestination.swift */,
+				GIFFR00000000000000EXP01 /* RecordingGIFExport.swift */,
 				RECFR000000000000000ENG1 /* ScreenRecorder.swift */,
 				RECFR000000000000000MGR1 /* ScreenRecordingManager.swift */,
 				S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */,
 				MMH1234567890ABCDEF5678 /* MultiMonitorHelper.swift */,
 				SCH1234567890ABCDEF5678 /* ScreenCaptureHelper.swift */,
+				SCRL0000000000000STCH0002 /* ScrollingStitcher.swift */,
+				SCRL0000000000000SESS0002 /* ScrollingCaptureSession.swift */,
 				A1T2O3A4S5T6C7H8R9O0M1F2 /* ToastChrome.swift */,
 				PERM1234567890ABCDEF02 /* PermissionManager.swift */,
 				HOTK1234567890ABCDEF02 /* HotKeyManager.swift */,
@@ -701,14 +740,21 @@
 				8E07908081111E7A429D9C70 /* AnnotationToolsFeatureTests.swift in Sources */,
 				461EC9839CF7DC80896D0948 /* CaptionModelTests.swift in Sources */,
 				781780F728DCF849C166AC9B /* RecordingConfirmToolbarTests.swift in Sources */,
+				SCRL0000000000000TEST0001 /* ScrollingStitcherTests.swift in Sources */,
 				3AADD36FC343492498C96D1D /* HexColorHelpersTests.swift in Sources */,
 				B9046B3D5F2848589108DE05 /* ImageHelpersTests.swift in Sources */,
 				8BAE095A97B34C5E953E4D1C /* MultiMonitorHelperTests.swift in Sources */,
 				RECBF000000000000000TST1 /* RecordingSupportTests.swift in Sources */,
 				ACTWBF00000000000000TST1 /* ActivationWaitTests.swift in Sources */,
 				TEC241BF0000000000TST1 /* ClipboardCaptureShieldTests.swift in Sources */,
+				TEC234BF0000000000TST1 /* StandardEditMenuTests.swift in Sources */,
 				RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */,
+				GIFBF00000000000000TST01 /* RecordingGIFExportTests.swift in Sources */,
+				TEC248BF0000000000TST1 /* ClickIndicatorTests.swift in Sources */,
 				RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */,
+				TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */,
+				TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */,
+				APPVERBF00000000000TST1 /* AppVersionLabelTests.swift in Sources */,
 				0077DD70640F423480F22E92 /* RectangleSizeValidatorTests.swift in Sources */,
 				SAVT00000000000000000001 /* ScreenshotAnnotationViewToolbarTests.swift in Sources */,
 				ATST000000000000000A0001 /* AnnotationToolShortcutsTests.swift in Sources */,
@@ -743,15 +789,19 @@
 				M3G4N5I6F7Y8G9L0A1S2S3 /* MagnifyingGlassManager.swift in Sources */,
 				H1A2L3O4M5A6N7A8G9E0R1 /* HaloManager.swift in Sources */,
 				RECBF000000000000000SUP1 /* RecordingSupport.swift in Sources */,
+				TEC285BF0000000000DRG1 /* RecordingDrag.swift in Sources */,
 				ACTWBF00000000000000APP1 /* AppActivation.swift in Sources */,
 				TEC241BF0000000000SHLD1 /* ClipboardCaptureShield.swift in Sources */,
+				TEC234BF0000000000MENU1 /* StandardEditMenu.swift in Sources */,
 				CAPBF000000000000000MOD1 /* CaptionModel.swift in Sources */,
 				CAPBF000000000000000ENG1 /* CaptionEngine.swift in Sources */,
 				CAPBF000000000000000BRN1 /* CaptionBurnIn.swift in Sources */,
+				TEC248BF0000000000CLK1 /* ClickIndicator.swift in Sources */,
 				CAPBF000000000000000OVL1 /* CaptionOverlayWindow.swift in Sources */,
 				CAPBF000000000000000MIC1 /* MicrophoneAudioSource.swift in Sources */,
 				RECBF000000000000000TOA1 /* ToastPresenter.swift in Sources */,
 				RECBF000000000000000DST1 /* RecordingDestination.swift in Sources */,
+				GIFBF00000000000000EXP01 /* RecordingGIFExport.swift in Sources */,
 				RECBF000000000000000ENG1 /* ScreenRecorder.swift in Sources */,
 				RECBF000000000000000MGR1 /* ScreenRecordingManager.swift in Sources */,
 				RECBF000000000000000PLY1 /* RecordingPlayerWindowController.swift in Sources */,
@@ -762,6 +812,8 @@
 				S5C6R7E8N9S0H1O2T3M4A5N6A7G8E9R0 /* ScreenshotSelectionView.swift in Sources */,
 				MMH1234567890ABCDEF1234 /* MultiMonitorHelper.swift in Sources */,
 				SCH1234567890ABCDEF1234 /* ScreenCaptureHelper.swift in Sources */,
+				SCRL0000000000000STCH0001 /* ScrollingStitcher.swift in Sources */,
+				SCRL0000000000000SESS0001 /* ScrollingCaptureSession.swift in Sources */,
 				A1T2O3A4S5T6C7H8R9O0M1B2 /* ToastChrome.swift in Sources */,
 				PERM1234567890ABCDEF01 /* PermissionManager.swift in Sources */,
 				HOTK1234567890ABCDEF01 /* HotKeyManager.swift in Sources */,
@@ -851,7 +903,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = Topkit/TopkitDev.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1197,7 +1249,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = Topkit/TopkitDev.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;

@@ -100,9 +100,29 @@ final class ClipboardRowMenuView: NSView {
     private var mouseInside = false {
         didSet {
             guard mouseInside != oldValue else { return }
+            // One hovered row at a time. AppKit drops mouseExited for rows now and
+            // then while a menu is tracking (a menu rebuilt as it opened, after a
+            // new copy, showed it most): the row the pointer left stayed lit and
+            // rows ended up highlighted in a stripe.
+            if mouseInside {
+                if let other = Self.hoveredRow, other !== self { other.mouseInside = false }
+                Self.hoveredRow = self
+            } else if Self.hoveredRow === self {
+                Self.hoveredRow = nil
+            }
             updateAppearance()
             updateTooltip()
         }
+    }
+
+    /// The row the pointer is on, in whichever menu is open.
+    private static weak var hoveredRow: ClipboardRowMenuView?
+
+    /// Re-derives hover from where the pointer really is. The menu calls this on
+    /// every row when its highlight moves (menu(_:willHighlight:)), which it does
+    /// reliably, so a row that missed its mouseExited lets go there.
+    func refreshHover() {
+        recomputeHoverFromPointer()
     }
 
     /// Wraps the hover text rather than letting a 200-character clipboard preview

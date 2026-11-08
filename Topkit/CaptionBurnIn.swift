@@ -147,12 +147,17 @@ enum CaptionBurnInRenderer {
 }
 
 /// Copies a captured BGRA frame into a writable buffer and stamps the caption
-/// onto it. Runs on the recorder's sample queue for every frame while a
-/// caption is visible — pure memcpy + one small CG draw, no color conversion
-/// of the base pixels.
+/// (and any click rings, via `overlay`) onto it. Runs on the recorder's sample
+/// queue for every frame while either is visible — pure memcpy + small CG
+/// draws, no color conversion of the base pixels.
 enum CaptionPixelCompositor {
 
-    static func copyAndBurn(source: CVPixelBuffer, into dest: CVPixelBuffer, caption: CaptionBurnImage) -> Bool {
+    static func copyAndBurn(
+        source: CVPixelBuffer,
+        into dest: CVPixelBuffer,
+        caption: CaptionBurnImage?,
+        overlay: ((CGContext) -> Void)? = nil
+    ) -> Bool {
         guard CVPixelBufferGetPixelFormatType(source) == kCVPixelFormatType_32BGRA,
               CVPixelBufferGetPixelFormatType(dest) == kCVPixelFormatType_32BGRA else { return false }
         CVPixelBufferLockBaseAddress(source, .readOnly)
@@ -187,7 +192,8 @@ enum CaptionPixelCompositor {
             bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
         ) else { return true } // frame copied; worst case the caption is skipped
 
-        context.draw(caption.image, in: caption.rect)
+        if let caption { context.draw(caption.image, in: caption.rect) }
+        overlay?(context)
         return true
     }
 }

@@ -103,6 +103,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
             "imagePreviewWidth": 80,
             "imagePreviewHeight": 50,
             "maxHistorySize": 100,
+            // On by default: clipboard history stays out of other apps' screen shares (TEC-356).
+            ClipboardCaptureShield.hidesFromScreenSharingKey: true,
             "playNotificationSounds": true,
             "showToastNotifications": true,
             "recordingDictationSubtitles": true,
@@ -203,6 +205,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)
         
+        // ⌘A / ⌘C / ⌘V / ⌘X in text fields only work through main-menu key equivalents.
+        StandardEditMenu.install(in: NSApp)
+
         // Register default preferences
         registerDefaults()
 
@@ -457,7 +462,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
     /// clipboard rows up like native items.
     public func menu(_ menu: NSMenu, willHighlight item: NSMenuItem?) {
         for menuItem in menu.items {
-            (menuItem.view as? ClipboardRowMenuView)?.isMenuHighlighted = (menuItem === item)
+            guard let row = menuItem.view as? ClipboardRowMenuView else { continue }
+            row.isMenuHighlighted = (menuItem === item)
+            // The highlight moved because the pointer did: rows that missed their
+            // mouseExited drop hover here.
+            if menuItem !== item { row.refreshHover() }
         }
         // AppKit never fires a view-backed item's action on Return, so Enter
         // is handled two ways: a keyDown monitor armed around the tracking

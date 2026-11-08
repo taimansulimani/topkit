@@ -7,7 +7,9 @@ import Carbon.HIToolbox
 /// player: it only ever opens files produced by ScreenRecordingManager.
 /// Trim uses AVPlayerView's built-in QuickTime trim UI; committing a trim
 /// passthrough-exports the kept range and atomically overwrites the file.
-final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegate {
+/// Dragging the title bar (the file's name and icon) drags the recording
+/// file into other apps.
+final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegate, NSDraggingSource {
 
     private var fileURL: URL
     private let playerView = AVPlayerView()
@@ -15,10 +17,21 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
     private var renameButton: NSButton?
     private var deleteButton: NSButton?
     private var keyMonitor: Any?
+    private var titleBarMonitor: Any?
+    /// Sits over the file's name so the window server never starts a window
+    /// move there: the press is a file drag, not a move.
+    private let fileNameGrip = TitleBarGripView()
+    private var titleFieldObserver: NSObjectProtocol?
+    private var trimAccessory: NSView?
+    /// A committed trim is being written over the file: no drag until done.
+    private var isExportingTrim = false
     private var onClose: (() -> Void)?
+    /// The recording's GIF, when the GIF toolbar toggle was on.
+    private let gifCompanion: RecordingGIFCompanion?
 
-    init(fileURL: URL, onClose: (() -> Void)? = nil) {
+    init(fileURL: URL, gifCompanion: RecordingGIFCompanion? = nil, onClose: (() -> Void)? = nil) {
         self.fileURL = fileURL
+        self.gifCompanion = gifCompanion
         self.onClose = onClose
 
         let window = NSWindow(
@@ -28,6 +41,10 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
             defer: false
         )
         window.title = fileURL.lastPathComponent
+        // Dragging the file's name or icon drags the recording into other apps
+        // (see handleTitleBarPress); the rest of the title bar moves the window
+        // as usual. The icon keeps its ⌘-click path menu.
+        window.representedURL = fileURL
         window.collectionBehavior = [.fullScreenPrimary]
         window.minSize = NSSize(width: 480, height: 300)
         window.isReleasedWhenClosed = false
@@ -57,8 +74,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
             trim.imagePosition = .imageLeading
         }
 
-        // Delete (⌘⌫) discards the recording. Destructive, so it sits last,
-        // set apart from Rename/Trim by a wider gap.
+        // Delete (⌘⌫) discards the recording. Destructive, so it sits last.
         let delete = NSButton(title: String(localized: "Delete"), target: self, action: #selector(deleteTapped))
         delete.bezelStyle = .toolbar
         if let bin = NSImage(systemSymbolName: "trash", accessibilityDescription: "Delete") {
@@ -66,25 +82,22 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
             delete.imagePosition = .imageLeading
         }
 
-        let renameWidth = rename.fittingSize.width + 8
-        let trimWidth = trim.fittingSize.width + 8
-        let deleteWidth = delete.fittingSize.width + 8
-        let gap: CGFloat = 8
-        let destructiveGap: CGFloat = 16
-        let container = NSView(frame: NSRect(
-            x: 0, y: 0,
-            width: renameWidth + gap + trimWidth + destructiveGap + deleteWidth + 16,
-            height: 28
-        ))
-        rename.frame = NSRect(x: 0, y: 3, width: renameWidth, height: 22)
-        trim.frame = NSRect(x: renameWidth + gap, y: 3, width: trimWidth, height: 22)
-        delete.frame = NSRect(x: renameWidth + gap + trimWidth + destructiveGap, y: 3, width: deleteWidth, height: 22)
-        container.addSubview(rename)
-        container.addSubview(trim)
-        container.addSubview(delete)
+        // One even gap between the three, and the same inset after the last.
+        let gap: CGFloat = 4
+        let buttons = [rename, trim, delete]
+        var x: CGFloat = 0
+        let container = NSView()
+        for button in buttons {
+            let width = ceil(button.fittingSize.width)
+            button.frame = NSRect(x: x, y: 3, width: width, height: 22)
+            container.addSubview(button)
+            x += width + gap
+        }
+        container.frame = NSRect(x: 0, y: 0, width: x - gap + 8, height: 28)
         accessory.view = container
         accessory.layoutAttribute = .trailing
         window.addTitlebarAccessoryViewController(accessory)
+        trimAccessory = container
         trimButton = trim
         renameButton = rename
         deleteButton = delete
@@ -114,7 +127,37 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
             }
         }
 
+        // Title bar presses are taken before AppKit's title bar sees them:
+        // its own tracking loop would swallow the drag.
+        titleBarMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            guard let self, let window = self.window, event.window === window,
+                  self.isTitleBarDragArea(event, in: window) else { return event }
+            self.handleTitleBarPress(event, in: window)
+            return nil
+        }
+
         window.center()
+        placeFileNameGrip()
+    }
+
+    /// Puts the grip over the file's name, wherever AppKit has laid the title
+    /// out (it moves on resize, rename and full screen).
+    private func placeFileNameGrip() {
+        guard let window, let field = Self.titleField(in: window), let host = field.superview else {
+            fileNameGrip.removeFromSuperview()
+            return
+        }
+        if titleFieldObserver == nil {
+            field.postsFrameChangedNotifications = true
+            titleFieldObserver = NotificationCenter.default.addObserver(
+                forName: NSView.frameDidChangeNotification, object: field, queue: .main
+            ) { [weak self] _ in self?.placeFileNameGrip() }
+        }
+        if fileNameGrip.superview !== host {
+            fileNameGrip.removeFromSuperview()
+            host.addSubview(fileNameGrip, positioned: .above, relativeTo: field)
+        }
+        fileNameGrip.frame = host.convert(Self.fileNameRect(of: field), from: field)
     }
 
     required init?(coder: NSCoder) {
@@ -162,6 +205,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
     }
 
     private func exportTrimmed(range: CMTimeRange) {
+        isExportingTrim = true
         trimButton?.title = String(localized: "Trimming…")
         let asset = AVURLAsset(url: fileURL)
         // Passthrough = no re-encode, QuickTime-style instant trim. Falls back
@@ -192,6 +236,8 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
                 if RecordingDestination.replaceRecording(at: self.fileURL, with: tempURL) != nil {
                     self.playerView.player = AVPlayer(url: self.fileURL)
                     self.finishTrim(success: true)
+                    // Keep the GIF matching the trimmed video.
+                    self.gifCompanion?.export(from: self.fileURL)
                 } else {
                     try? FileManager.default.removeItem(at: tempURL)
                     self.playerView.player = AVPlayer(url: self.fileURL)
@@ -202,6 +248,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
     }
 
     private func finishTrim(success: Bool) {
+        isExportingTrim = false
         trimButton?.title = String(localized: "Trim")
         resetTrimState()
         ToastPresenter.shared.show(
@@ -251,11 +298,14 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
         }
 
         fileURL = newURL
+        gifCompanion?.videoRenamed(to: newURL)
         let player = AVPlayer(url: newURL)
         playerView.player = player
         if let resumeTime { player.seek(to: resumeTime) }
         if wasPlaying { player.play() }
         window?.title = newURL.lastPathComponent
+        placeFileNameGrip()
+        window?.representedURL = newURL
         ToastPresenter.shared.show(message: String(localized: "Recording renamed"))
     }
 
@@ -269,6 +319,8 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
         let alert = NSAlert()
         alert.messageText = String(localized: "Delete Recording")
         switch RecordingDestination.discardMethod(for: fileURL) {
+        case .moveToTrash where gifCompanion?.hasGIF == true:
+            alert.informativeText = String(localized: "“\(name)” and its GIF will be moved to the Trash.")
         case .moveToTrash:
             alert.informativeText = String(localized: "“\(name)” will be moved to the Trash.")
         case .removeTemporaryFile:
@@ -295,6 +347,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
             ToastPresenter.shared.show(message: String(localized: "Delete failed"), force: true)
             return
         }
+        gifCompanion?.discard()
         ToastPresenter.shared.show(message: method == .moveToTrash
             ? String(localized: "Recording moved to Trash")
             : String(localized: "Recording deleted"))
@@ -302,15 +355,182 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
         window?.close()
     }
 
+    // MARK: - Drag to other apps
+
+    /// The file's name in the title bar. The file icon next to it drags
+    /// through AppKit (`window(_:shouldDragDocumentWith:…)`); everywhere else
+    /// on the title bar moves the window. Not in full screen or under a sheet.
+    private func isTitleBarDragArea(_ event: NSEvent, in window: NSWindow) -> Bool {
+        isFileNameDragPoint(event.locationInWindow, in: window)
+    }
+
+    /// `point` is in window coordinates.
+    func isFileNameDragPoint(_ point: NSPoint, in window: NSWindow) -> Bool {
+        guard window.attachedSheet == nil,
+              !window.styleMask.contains(.fullScreen),
+              point.y >= window.contentLayoutRect.maxY,
+              let field = Self.titleField(in: window) else { return false }
+        return Self.fileNameRect(of: field).contains(field.convert(point, from: nil))
+    }
+
+    /// The name's text inside the title field (the field can be wider), in the
+    /// field's coordinates, with a little slack each side.
+    static func fileNameRect(of field: NSTextField) -> NSRect {
+        let textWidth = ceil(field.attributedStringValue.size().width)
+        let left: CGFloat
+        switch field.alignment {
+        case .center: left = (field.bounds.width - textWidth) / 2
+        case .right: left = field.bounds.width - textWidth
+        default: left = 0
+        }
+        return NSRect(x: left - 2, y: 0, width: textWidth + 4, height: field.bounds.height)
+    }
+
+    /// The text field AppKit draws the window title in.
+    static func titleField(in window: NSWindow) -> NSTextField? {
+        guard let frameView = window.contentView?.superview else { return nil }
+        func find(_ view: NSView) -> NSTextField? {
+            if let field = view as? NSTextField, field.stringValue == window.title, !field.isHidden { return field }
+            for subview in view.subviews {
+                if let found = find(subview) { return found }
+            }
+            return nil
+        }
+        return find(frameView)
+    }
+
+    /// Runs the press like Finder runs a file: a click does what a title bar
+    /// click does, a drag past the threshold becomes a file drag, ⌘-drag
+    /// moves the window.
+    private func handleTitleBarPress(_ press: NSEvent, in window: NSWindow) {
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        let movesWindow = press.modifierFlags.contains(.command)
+        while let event = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            if event.type == .leftMouseUp {
+                if !movesWindow, press.clickCount == 2 { performTitleBarDoubleClick(window) }
+                return
+            }
+            if movesWindow {
+                var origin = window.frame.origin
+                origin.x += event.deltaX
+                origin.y -= event.deltaY
+                window.setFrameOrigin(origin)
+            } else if RecordingDrag.hasPassedThreshold(from: press.locationInWindow, to: event.locationInWindow) {
+                if !beginFileDrag(event: event, at: press.locationInWindow, in: window) {
+                    debugLog("📎 Recording drag not started (trim exporting or file gone)")
+                }
+                return
+            }
+        }
+    }
+
+    /// The system's title bar double-click setting (Desktop & Dock).
+    private func performTitleBarDoubleClick(_ window: NSWindow) {
+        switch UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
+        case "Minimize": window.miniaturize(nil)
+        case "None": break
+        default: window.zoom(nil)
+        }
+    }
+
+    /// The title bar's file icon: AppKit's own drag would let Finder move the
+    /// file out of the save folder, so it gets the same copy-only drag.
+    func window(_ window: NSWindow, shouldDragDocumentWith event: NSEvent, from dragImageLocation: NSPoint, with pasteboard: NSPasteboard) -> Bool {
+        _ = beginFileDrag(event: event, at: event.locationInWindow, in: window)
+        return false
+    }
+
+    /// Starts a copy-only drag of the recording file, with the current frame
+    /// as the drag image. Not while a committed trim is being written.
+    @discardableResult
+    private func beginFileDrag(event: NSEvent, at pressPoint: NSPoint, in window: NSWindow) -> Bool {
+        guard window.attachedSheet == nil,
+              let url = RecordingDrag.draggableFile(fileURL, trimInProgress: isExportingTrim),
+              let frameView = window.contentView?.superview else { return false }
+        let image = currentFrameImage() ?? {
+            let icon = NSWorkspace.shared.icon(forFile: url.path)
+            icon.size = NSSize(width: 64, height: 64)
+            return icon
+        }()
+        let item = NSDraggingItem(pasteboardWriter: url as NSURL)
+        item.setDraggingFrame(
+            RecordingDrag.dragImageFrame(imageSize: image.size, centeredAt: frameView.convert(pressPoint, from: nil)),
+            contents: image
+        )
+        let session = frameView.beginDraggingSession(with: [item], event: event, source: self)
+        session.animatesToStartingPositionsOnCancelOrFail = true
+        debugLog("📎 Recording drag started: \(url.lastPathComponent)")
+        return true
+    }
+
+    /// The frame on screen, small, for the drag image. Nil if it cannot be
+    /// decoded (the file icon is used instead).
+    private func currentFrameImage() -> NSImage? {
+        let scale = playerView.window?.backingScaleFactor ?? 2
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: fileURL))
+        generator.appliesPreferredTrackTransform = true
+        let side = RecordingDrag.maxImageDimension * scale
+        generator.maximumSize = CGSize(width: side, height: side)
+        // A nearby frame is fine for a drag image and decodes much faster.
+        let tolerance = CMTime(seconds: 0.5, preferredTimescale: 600)
+        generator.requestedTimeToleranceBefore = tolerance
+        generator.requestedTimeToleranceAfter = tolerance
+        let time = playerView.player?.currentTime() ?? .zero
+        guard let frame = try? generator.copyCGImage(at: time, actualTime: nil) else { return nil }
+        let size = NSSize(width: CGFloat(frame.width) / scale, height: CGFloat(frame.height) / scale)
+        // Rounded, with a hairline edge, like a thumbnail in Finder.
+        return NSImage(size: size, flipped: false) { rect in
+            let radius = RecordingDrag.imageCornerRadius
+            let shape = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+            NSGraphicsContext.saveGraphicsState()
+            shape.addClip()
+            NSImage(cgImage: frame, size: size).draw(in: rect)
+            NSGraphicsContext.restoreGraphicsState()
+            let edge = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: radius - 0.5, yRadius: radius - 0.5)
+            edge.lineWidth = 1
+            NSColor.white.withAlphaComponent(0.35).setStroke()
+            edge.stroke()
+            return true
+        }
+    }
+
+    // MARK: - NSDraggingSource
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        // Copy only: dropping on Finder must never move the recording out of
+        // the save folder from under the player.
+        context == .outsideApplication ? .copy : []
+    }
+
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        debugLog("📎 Recording drag ended: \(operation == .copy ? "dropped (copy)" : "cancelled")")
+    }
+
     // MARK: - NSWindowDelegate
 
     func windowWillClose(_ notification: Notification) {
+        if let titleFieldObserver {
+            NotificationCenter.default.removeObserver(titleFieldObserver)
+            self.titleFieldObserver = nil
+        }
         playerView.player?.pause()
         playerView.player = nil
         if let keyMonitor {
             NSEvent.removeMonitor(keyMonitor)
             self.keyMonitor = nil
         }
+        if let titleBarMonitor {
+            NSEvent.removeMonitor(titleBarMonitor)
+            self.titleBarMonitor = nil
+        }
         onClose?()
     }
+}
+
+/// A clear patch of title bar that does not move the window when pressed. The
+/// window server decides title bar moves from the views that allow it, before
+/// the app sees the press, so a drag that starts here can only be a file drag.
+final class TitleBarGripView: NSView {
+    override var mouseDownCanMoveWindow: Bool { false }
 }
