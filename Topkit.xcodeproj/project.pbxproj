@@ -113,6 +113,7 @@
 		RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST3 /* RecordingDiscardTests.swift */; };
 		TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */; };
 		TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC285FR0000000000TST1 /* RecordingDragTests.swift */; };
+		APPVERBF00000000000TST1 /* AppVersionLabelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPVERFR00000000000TST1 /* AppVersionLabelTests.swift */; };
 		REZE1234567890ABCDEF01 /* ResizeEdge.swift in Sources */ = {isa = PBXBuildFile; fileRef = REZE1234567890ABCDEF02 /* ResizeEdge.swift */; };
 		S1C2R3E4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */; };
 		S3C4R5E6N7S8H9O0T1M2A3N4A5G6E7R8 /* ScreenshotAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */; };
@@ -269,6 +270,7 @@
 		RECFR000000000000000TST3 /* RecordingDiscardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDiscardTests.swift; sourceTree = "<group>"; };
 		TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneVoiceProcessingTests.swift; sourceTree = "<group>"; };
 		TEC285FR0000000000TST1 /* RecordingDragTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDragTests.swift; sourceTree = "<group>"; };
+		APPVERFR00000000000TST1 /* AppVersionLabelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionLabelTests.swift; sourceTree = "<group>"; };
 		REZE1234567890ABCDEF02 /* ResizeEdge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeEdge.swift; sourceTree = "<group>"; };
 		S2C3R4E5N6S7H8O9T0M1A2N3A4G5E6R7 /* ScreenshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotManager.swift; sourceTree = "<group>"; };
 		S4C5R6E7N8S9H0O1T2M3A4N5A6G7E8R9 /* ScreenshotAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotAnnotationView.swift; sourceTree = "<group>"; };
@@ -373,6 +375,7 @@
 				RECFR000000000000000TST3 /* RecordingDiscardTests.swift */,
 				TEC295FR0000000000TST1 /* MicrophoneVoiceProcessingTests.swift */,
 				TEC285FR0000000000TST1 /* RecordingDragTests.swift */,
+				APPVERFR00000000000TST1 /* AppVersionLabelTests.swift */,
 				8AE6BF72AB9E4F758A962264 /* RectangleSizeValidatorTests.swift */,
 				SAVT00000000000000000002 /* ScreenshotAnnotationViewToolbarTests.swift */,
 				ATST000000000000000A0002 /* AnnotationToolShortcutsTests.swift */,
@@ -751,6 +754,7 @@
 				RECBF000000000000000TST3 /* RecordingDiscardTests.swift in Sources */,
 				TEC295BF0000000000TST1 /* MicrophoneVoiceProcessingTests.swift in Sources */,
 				TEC285BF0000000000TST1 /* RecordingDragTests.swift in Sources */,
+				APPVERBF00000000000TST1 /* AppVersionLabelTests.swift in Sources */,
 				0077DD70640F423480F22E92 /* RectangleSizeValidatorTests.swift in Sources */,
 				SAVT00000000000000000001 /* ScreenshotAnnotationViewToolbarTests.swift in Sources */,
 				ATST000000000000000A0001 /* AnnotationToolShortcutsTests.swift in Sources */,
