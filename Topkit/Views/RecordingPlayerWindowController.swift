@@ -26,9 +26,12 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
     /// A committed trim is being written over the file: no drag until done.
     private var isExportingTrim = false
     private var onClose: (() -> Void)?
+    /// The recording's GIF, when the GIF toolbar toggle was on.
+    private let gifCompanion: RecordingGIFCompanion?
 
-    init(fileURL: URL, onClose: (() -> Void)? = nil) {
+    init(fileURL: URL, gifCompanion: RecordingGIFCompanion? = nil, onClose: (() -> Void)? = nil) {
         self.fileURL = fileURL
+        self.gifCompanion = gifCompanion
         self.onClose = onClose
 
         let window = NSWindow(
@@ -233,6 +236,8 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
                 if RecordingDestination.replaceRecording(at: self.fileURL, with: tempURL) != nil {
                     self.playerView.player = AVPlayer(url: self.fileURL)
                     self.finishTrim(success: true)
+                    // Keep the GIF matching the trimmed video.
+                    self.gifCompanion?.export(from: self.fileURL)
                 } else {
                     try? FileManager.default.removeItem(at: tempURL)
                     self.playerView.player = AVPlayer(url: self.fileURL)
@@ -293,6 +298,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
         }
 
         fileURL = newURL
+        gifCompanion?.videoRenamed(to: newURL)
         let player = AVPlayer(url: newURL)
         playerView.player = player
         if let resumeTime { player.seek(to: resumeTime) }
@@ -313,6 +319,8 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
         let alert = NSAlert()
         alert.messageText = String(localized: "Delete Recording")
         switch RecordingDestination.discardMethod(for: fileURL) {
+        case .moveToTrash where gifCompanion?.hasGIF == true:
+            alert.informativeText = String(localized: "“\(name)” and its GIF will be moved to the Trash.")
         case .moveToTrash:
             alert.informativeText = String(localized: "“\(name)” will be moved to the Trash.")
         case .removeTemporaryFile:
@@ -339,6 +347,7 @@ final class RecordingPlayerWindowController: NSWindowController, NSWindowDelegat
             ToastPresenter.shared.show(message: String(localized: "Delete failed"), force: true)
             return
         }
+        gifCompanion?.discard()
         ToastPresenter.shared.show(message: method == .moveToTrash
             ? String(localized: "Recording moved to Trash")
             : String(localized: "Recording deleted"))

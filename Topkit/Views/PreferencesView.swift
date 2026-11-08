@@ -84,6 +84,8 @@ struct BehaviorTab: View {
     @AppStorage("launchOnLogin") private var launchOnLogin = false
     @AppStorage("recordingDictationSubtitles") private var recordingDictationSubtitles = true
     @AppStorage("recordingMicrophoneAudio") private var recordingMicrophoneAudio = false
+    @AppStorage(RecordingGIFKeys.folderMode) private var gifFolderMode = RecordingGIFFolderMode.sameAsVideo.rawValue
+    @AppStorage(RecordingGIFKeys.quality) private var gifQuality = RecordingGIFQuality.medium.rawValue
     @AppStorage("subtitleColorRed") private var subtitleColorRed = 0.0
     @AppStorage("subtitleColorGreen") private var subtitleColorGreen = 0.0
     @AppStorage("subtitleColorBlue") private var subtitleColorBlue = 0.0
@@ -112,6 +114,7 @@ struct BehaviorTab: View {
     @State private var brushColor: Color = .black
     @State private var screenshotFolderPath: String = ""
     @State private var recordingFolderPath: String = ""
+    @State private var gifFolderPath: String = ""
     @State private var launchAtLoginError: String? = nil
     @State private var magnifyingGlassSizeError: String? = nil
     @State private var haloSizeError: String? = nil
@@ -408,6 +411,63 @@ struct BehaviorTab: View {
                 // sub-setting, since those sit at the same indent.
                 Toggle("Record microphone audio", isOn: $recordingMicrophoneAudio)
                     .padding(.top, 8)
+
+                // GIF (turned on per recording with the GIF toggle in the recording toolbar).
+                SettingsRow(label: "Save GIFs to:") {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Spacer(minLength: 8)
+                        Picker("", selection: $gifFolderMode) {
+                            Text("Same folder as video").tag(RecordingGIFFolderMode.sameAsVideo.rawValue)
+                            Text("Different folder").tag(RecordingGIFFolderMode.custom.rawValue)
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .frame(width: 180, alignment: .trailing)
+                        .onChange(of: gifFolderMode) { _, mode in
+                            // Picking "Different folder" with none chosen yet asks for one.
+                            if mode == RecordingGIFFolderMode.custom.rawValue, gifFolderPath.isEmpty {
+                                DispatchQueue.main.async { chooseGIFFolder() }
+                            }
+                        }
+                    }
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+                }
+                .padding(.top, 8)
+
+                if gifFolderMode == RecordingGIFFolderMode.custom.rawValue {
+                    SettingsRow(label: "GIF folder:") {
+                        HStack(spacing: 8) {
+                            Text(gifFolderPath)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                            Button("Choose...") {
+                                chooseGIFFolder()
+                            }
+                        }
+                        .frame(minWidth: 0, maxWidth: .infinity)
+                    }
+                }
+
+                SettingsRow(label: "GIF quality:") {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Spacer(minLength: 8)
+                        Picker("", selection: $gifQuality) {
+                            Text("Low").tag(RecordingGIFQuality.low.rawValue)
+                            Text("Medium").tag(RecordingGIFQuality.medium.rawValue)
+                            Text("High").tag(RecordingGIFQuality.high.rawValue)
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .frame(width: 140, alignment: .trailing)
+                    }
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .trailing)
+                }
+
+                Text("Turn on GIF in the recording toolbar to also save the recording as a GIF.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -437,6 +497,7 @@ struct BehaviorTab: View {
 
             // Load recording folder path
             recordingFolderPath = displayPathForRecordingFolder()
+            gifFolderPath = displayPathForGIFFolder()
 
             // Load current subtitle colour from preferences
             subtitleColor = Color(NSColor(
@@ -581,6 +642,48 @@ struct BehaviorTab: View {
 
         RecordingDestination.store(folderURL: url)
         recordingFolderPath = url.path
+    }
+
+    private func chooseGIFFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.title = "Choose GIF Save Folder"
+        panel.prompt = "Choose"
+
+        if !gifFolderPath.isEmpty {
+            panel.directoryURL = URL(fileURLWithPath: gifFolderPath, isDirectory: true)
+        } else if !recordingFolderPath.isEmpty {
+            panel.directoryURL = URL(fileURLWithPath: recordingFolderPath, isDirectory: true)
+        } else {
+            panel.directoryURL = RecordingDestination.realDesktopURL()
+        }
+
+        guard panel.runModal() == .OK, let url = panel.url else {
+            // No folder yet: stay with the video's folder.
+            if gifFolderPath.isEmpty { gifFolderMode = RecordingGIFFolderMode.sameAsVideo.rawValue }
+            return
+        }
+
+        RecordingDestination.store(folderURL: url, bookmarkKey: RecordingGIFKeys.folderBookmark, pathKey: RecordingGIFKeys.folder)
+        gifFolderPath = url.path
+    }
+
+    private func displayPathForGIFFolder() -> String {
+        if let data = UserDefaults.standard.data(forKey: RecordingGIFKeys.folderBookmark) {
+            var isStale = false
+            if let url = try? URL(
+                resolvingBookmarkData: data,
+                options: [.withSecurityScope],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            ) {
+                return url.path
+            }
+        }
+        return UserDefaults.standard.string(forKey: RecordingGIFKeys.folder) ?? ""
     }
 
     private func displayPathForRecordingFolder() -> String {

@@ -94,6 +94,17 @@ class SelectionConfirmView: NSView {
             toolbar.addSubview(audioToggle)
             x += audioToggle.frame.width + spacing
 
+            // GIF: also save a GIF with the recording (off by default; folder
+            // and quality are in Preferences).
+            let gifToggle = makeOptionToggle(
+                title: String(localized: "GIF"),
+                isOn: UserDefaults.standard.bool(forKey: RecordingGIFKeys.exportEnabled),
+                action: #selector(gifToggled(_:))
+            )
+            gifToggle.frame.origin = NSPoint(x: x, y: y + (buttonHeight - gifToggle.frame.height) / 2)
+            toolbar.addSubview(gifToggle)
+            x += gifToggle.frame.width + spacing
+
             x += spacing
             toolbar.addSubview(makeDivider(atX: x, buttonY: y, buttonHeight: buttonHeight))
             x += 1 + spacing * 2
@@ -188,6 +199,10 @@ class SelectionConfirmView: NSView {
         let on = sender.state == .on
         UserDefaults.standard.set(on, forKey: "recordingMicrophoneAudio")
         onMicAudioToggled?(on)
+    }
+
+    @objc private func gifToggled(_ sender: NSButton) {
+        UserDefaults.standard.set(sender.state == .on, forKey: RecordingGIFKeys.exportEnabled)
     }
 
     @objc private func confirmTapped() {
