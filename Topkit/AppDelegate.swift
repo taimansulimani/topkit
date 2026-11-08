@@ -103,6 +103,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWin
             "imagePreviewWidth": 80,
             "imagePreviewHeight": 50,
             "maxHistorySize": 100,
+            // On by default: clipboard history stays out of other apps' screen shares (TEC-356).
+            ClipboardCaptureShield.hidesFromScreenSharingKey: true,
             "playNotificationSounds": true,
             "showToastNotifications": true,
             "recordingDictationSubtitles": true,

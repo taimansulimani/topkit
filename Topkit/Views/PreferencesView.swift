@@ -784,6 +784,7 @@ final class AutoPastePermissionMonitor: ObservableObject {
 struct ClipboardHistoryTab: View {
     @AppStorage("maxHistorySize") private var maxHistorySize = 100
     @AppStorage("showClearAlert") private var showClearAlert = true
+    @AppStorage(ClipboardCaptureShield.hidesFromScreenSharingKey) private var hidesFromScreenSharing = true
     @AppStorage("combineTextOnExport") private var combineTextOnExport = false
     @AppStorage("itemsInline") private var itemsInline = 10
     @AppStorage("itemsInFolder") private var itemsInFolder = 50
@@ -895,6 +896,13 @@ struct ClipboardHistoryTab: View {
                 Toggle("Show confirmation before clearing history", isOn: $showClearAlert)
                 
                 Text("History is saved automatically and encrypted on disk.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Toggle("Hide clipboard from screen sharing", isOn: $hidesFromScreenSharing)
+                    .onChange(of: hidesFromScreenSharing) { ClipboardCaptureShield.shared.settingDidChange() }
+
+                Text("People watching a screen share or recording see what's behind the clipboard menu.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
