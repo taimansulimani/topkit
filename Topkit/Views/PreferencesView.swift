@@ -1588,23 +1588,57 @@ struct ShortcutsTab: View {
 
 // MARK: - About Tab
 
-/// The version line About shows: `1.0 (251)`.
+/// The version line About shows.
 ///
 /// Two different numbers. `CFBundleShortVersionString` is the public one, the App
-/// Store listing's `1.0`. `CFBundleVersion` says which build of that version this
-/// copy is, and the target's "Stamp Build Number" phase writes the git commit count
-/// there, so the line names the exact commit a report came from.
+/// Store listing's `1.1` (or `1.1.1`). `CFBundleVersion` says which build of that
+/// version this copy is: the target's "Stamp Build Number" phase writes the git
+/// commit count there, so the line names the exact commit a report came from.
+///
+/// People who bought it from the App Store see the version alone, as the listing
+/// shows it. TestFlight builds add the build number, so a tester's screenshot says
+/// which build it was. Debug builds (Topkit Dev) say so as well.
 enum AppVersionLabel {
-    static func text(short: String?, build: String?) -> String {
+    enum Channel: Equatable {
+        case appStore
+        case testFlight
+        case debug
+    }
+
+    static func text(short: String?, build: String?, channel: Channel) -> String {
         let version = short.flatMap { $0.isEmpty ? nil : $0 } ?? "1.0"
-        guard let build = build.flatMap({ $0.isEmpty ? nil : $0 }) else { return version }
-        return "\(version) (\(build))"
+        let build = build.flatMap { $0.isEmpty ? nil : $0 }
+        switch channel {
+        case .appStore:
+            return version
+        case .testFlight:
+            return build.map { "\(version) (\($0))" } ?? version
+        case .debug:
+            return (build.map { "\(version) (\($0))" } ?? version) + " Debug"
+        }
+    }
+
+    /// Debug at compile time; a TestFlight install carries a sandbox receipt,
+    /// an App Store one a production receipt.
+    static func channel(isDebug: Bool, receiptURL: URL?) -> Channel {
+        if isDebug { return .debug }
+        return receiptURL?.lastPathComponent == "sandboxReceipt" ? .testFlight : .appStore
+    }
+
+    static var currentChannel: Channel {
+        #if DEBUG
+        let isDebug = true
+        #else
+        let isDebug = false
+        #endif
+        return channel(isDebug: isDebug, receiptURL: Bundle.main.appStoreReceiptURL)
     }
 
     static var current: String {
         text(
             short: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-            build: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+            build: Bundle.main.infoDictionary?["CFBundleVersion"] as? String,
+            channel: currentChannel
         )
     }
 }
