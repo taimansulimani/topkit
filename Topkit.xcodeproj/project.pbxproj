@@ -106,6 +106,7 @@
 		TEC241BF0000000000TST1 /* ClipboardCaptureShieldTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */; };
 		TEC234BF0000000000MENU1 /* StandardEditMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC234FR0000000000MENU1 /* StandardEditMenu.swift */; };
 		TEC234BF0000000000TST1 /* StandardEditMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */; };
+		TEC360BF0000000000ABT1 /* StandardAboutPanelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = TEC360FR0000000000ABT1 /* StandardAboutPanelTests.swift */; };
 		RECBF000000000000000TOA1 /* ToastPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TOA1 /* ToastPresenter.swift */; };
 		RECBF000000000000000TST1 /* RecordingSupportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST1 /* RecordingSupportTests.swift */; };
 		RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECFR000000000000000TST2 /* TrimRangeTests.swift */; };
@@ -263,6 +264,7 @@
 		TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardCaptureShieldTests.swift; sourceTree = "<group>"; };
 		TEC234FR0000000000MENU1 /* StandardEditMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardEditMenu.swift; sourceTree = "<group>"; };
 		TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardEditMenuTests.swift; sourceTree = "<group>"; };
+		TEC360FR0000000000ABT1 /* StandardAboutPanelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardAboutPanelTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TOA1 /* ToastPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastPresenter.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST1 /* RecordingSupportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSupportTests.swift; sourceTree = "<group>"; };
 		RECFR000000000000000TST2 /* TrimRangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrimRangeTests.swift; sourceTree = "<group>"; };
@@ -369,6 +371,7 @@
 				ACTWFR00000000000000TST1 /* ActivationWaitTests.swift */,
 				TEC241FR0000000000TST1 /* ClipboardCaptureShieldTests.swift */,
 				TEC234FR0000000000TST1 /* StandardEditMenuTests.swift */,
+				TEC360FR0000000000ABT1 /* StandardAboutPanelTests.swift */,
 				RECFR000000000000000TST2 /* TrimRangeTests.swift */,
 				GIFFR00000000000000TST01 /* RecordingGIFExportTests.swift */,
 				TEC248FR0000000000TST1 /* ClickIndicatorTests.swift */,
@@ -748,6 +751,7 @@
 				ACTWBF00000000000000TST1 /* ActivationWaitTests.swift in Sources */,
 				TEC241BF0000000000TST1 /* ClipboardCaptureShieldTests.swift in Sources */,
 				TEC234BF0000000000TST1 /* StandardEditMenuTests.swift in Sources */,
+				TEC360BF0000000000ABT1 /* StandardAboutPanelTests.swift in Sources */,
 				RECBF000000000000000TST2 /* TrimRangeTests.swift in Sources */,
 				GIFBF00000000000000TST01 /* RecordingGIFExportTests.swift in Sources */,
 				TEC248BF0000000000TST1 /* ClickIndicatorTests.swift in Sources */,
