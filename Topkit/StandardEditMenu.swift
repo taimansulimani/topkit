@@ -1,5 +1,31 @@
 import AppKit
 
+/// Options for the standard About panel so the version line matches `AppVersionLabel.current`.
+///
+/// AppKit normally shows `Version <short> (<build>)`. We pass the full label as
+/// `applicationVersion` and leave `version` empty so the build is not shown again in
+/// parentheses on App Store copies (see TN2179: no build string → `Version` + marketing only).
+enum StandardAboutPanel {
+    static func options(versionLabel: String) -> [NSApplication.AboutPanelOptionKey: Any] {
+        [
+            .applicationVersion: versionLabel,
+            .version: "",
+        ]
+    }
+
+    static func present() {
+        NSApp.orderFrontStandardAboutPanel(options: options(versionLabel: AppVersionLabel.current))
+    }
+}
+
+final class StandardAboutPanelTarget: NSObject {
+    static let shared = StandardAboutPanelTarget()
+
+    @objc func showAboutPanel(_ sender: Any?) {
+        StandardAboutPanel.present()
+    }
+}
+
 /// The app's main menu: the application menu (About, Settings, Hide, Quit) plus an Edit menu with Cut, Copy,
 /// Paste and Select All.
 ///
@@ -50,7 +76,13 @@ enum StandardEditMenu {
     static func makeApplicationMenu() -> NSMenu {
         let name = (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String) ?? "Topkit"
         let menu = NSMenu(title: name)
-        menu.addItem(NSMenuItem(title: "About \(name)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: ""))
+        let about = NSMenuItem(
+            title: "About \(name)",
+            action: #selector(StandardAboutPanelTarget.showAboutPanel(_:)),
+            keyEquivalent: ""
+        )
+        about.target = StandardAboutPanelTarget.shared
+        menu.addItem(about)
         menu.addItem(.separator())
         // AppDelegate.showPreferences, found through the responder chain (the app delegate).
         menu.addItem(NSMenuItem(title: "Settings…", action: NSSelectorFromString("showPreferences"), keyEquivalent: ""))
