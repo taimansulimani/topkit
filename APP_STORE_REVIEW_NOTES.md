@@ -23,12 +23,16 @@ Topkit: macOS menu bar productivity app (LSUIElement). The listing groups it as 
 THIS BINARY (vs first approved build)
 - Record: screen recording + optional on-device dictation subtitles + optional mic audio
 - Present and annotate: live Annotate (freehand, shapes, arrows, text, stickers, redact, numbered badges). Guides, grid and measure are now tools inside Annotate, not separate menu items.
-- Copy and paste: clipboard search, pinning, image hover previews
+- Copy and paste: clipboard search, pinning, image hover previews; optional “Hide clipboard from screen sharing” (Preferences → Clipboard, default on) keeps clipboard windows out of screen shares
 - Auto-paste unchanged (PostEvent / ⌘V; default OFF)
+
+SCREEN SHARING — CLIPBOARD (1.1, TEC-356)
+- Preferences → Clipboard includes “Hide clipboard from screen sharing” (default on).
+- When on, clipboard history windows use a non-shareable NSWindow sharing type so they do not appear in third-party screen shares, macOS screen recordings, or screenshots. This is local UI only; no Accessibility API, no network, no inspection of other apps.
 
 PERMISSIONS (only when used)
 1. Screen Recording — picker, magnify, screenshot/annotate, recording.
-2. Microphone — optional subtitles and/or mic track (off by default).
+2. Microphone — optional subtitles and/or mic track (off by default). When “Record microphone” is on for a screen recording, audio is captured with Apple’s on-device voice processing (noise suppression, echo cancellation, automatic gain) so the recorded mic track is clearer; processing stays on the Mac (no servers). If voice processing is unavailable on the device, Topkit falls back to the previous raw mic path.
 3. Speech Recognition — legacy SFSpeech path only; always on-device; no Apple-server fallback; we have no servers.
 4. PostEvent — only if user enables “Input ⌘V after menu item selection”.
 5. Network — none. No com.apple.security.network.client or .server entitlement in the sandbox. Verifiable from the binary.

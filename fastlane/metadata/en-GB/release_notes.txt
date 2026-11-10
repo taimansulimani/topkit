@@ -1,6 +1,14 @@
+- Scrolling screenshots: capture a whole page, chat or document by scrolling, up or down.
+- Turn on GIF to save a GIF next to your recording.
+- Show your clicks in recordings.
+- Clearer microphone audio, with background noise reduced.
+- Drag a recording from the video editor straight into other apps.
+- Cmd-A selects all the text in an annotation.
+- The clipboard stays hidden while your screen is being shared.
 - Clipboard search is now instant, even with a long history full of big text and images.
 - Double-click an annotation to change its colour.
 - Delete a recording straight from the video editor. It goes to the Bin, so you can put it back.
-- The clipboard history no longer shows up in your screenshots or recordings. Open it mid-recording and only you see it.
+- The clipboard history no longer shows up in your screenshots or recordings.
 - Typing a grid size now works on every monitor, not just the main one.
 - Permission requests now open in front and ready to answer.
+- Subtitles no longer appear twice in recordings.
